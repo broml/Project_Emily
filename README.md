@@ -16,7 +16,7 @@ Emily consists of three independent modules communicating over a local UDP netwo
 * **True Autonomy:** Emily decides when to sleep, when to wake up, and when to look around based on her internal Arousal/Valence levels.
 * **Vision & Voice:** She sees the world through an OV2640 camera and speaks via high-quality TTS generation.
 * **Modular Personality:** Change her entire character by swapping the `adventure.json` CMS file (e.g., from "Helpful Assistant" to "Dungeon Master").
-* **Wireless Body:** The head and body are physically separate (connected only by power), communicating wirelessly for a clean build.
+* **Wireless Body:** The head and body are physically separate (connected only by power and a servo signal line), communicating wirelessly for a clean build.
 
 ## 💰 Prerequisites & API Costs
 To run Emily, you need API keys. We prioritized privacy and cost-efficiency:
@@ -46,7 +46,7 @@ To run Emily, you need API keys. We prioritized privacy and cost-efficiency:
     * Format a MicroSD card to FAT32.
     * Copy contents of `/SD_Card_Template` to the **ROOT** of the card.
     * Add your WiFi and API keys in the code (or `secrets.h`).
-5.  **Wake Her Up:** Press the wake button and say "Hello!".
+5.  **Wake Her Up:** Press the wake button to start Emily's interaction with the world.
 
 ---
 *Created with ❤️ by the Emily Project Team.*
