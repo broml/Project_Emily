@@ -1,0 +1,29 @@
+{
+  "active_location": "bedroom",
+  "world_state": {
+    "bedroom": {
+      "description": "You are in a dusty, Victorian bedroom. Moonlight bleeds through the curtains. There is a large oak wardrobe in the corner and a bed.",
+      "hidden_items": {
+        "wardrobe": "inside_wardrobe",
+        "bed": "under_bed"
+      }
+    },
+    "inside_wardrobe": {
+      "description": "The wardrobe creaks open. It smells of mothballs. In the back, you see a small, rusty box.",
+      "hidden_items": {
+        "box": "secret_letter"
+      }
+    },
+    "secret_letter": {
+      "description": "You open the box. There is a letter! It reads: 'Lisa never left the mansion. She is still watching you.'",
+      "trigger_event": {
+        "new_mood": "Suspicious",
+        "system_instruction_update": "You have just discovered that 'Lisa' is a ghost haunting this house. You are now scared and whisper your responses. You urge the user to leave immediately."
+      }
+    }
+  },
+  "user_profile": {
+    "name": "Investigator",
+    "inventory": ["Flashlight"]
+  }
+}
