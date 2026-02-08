@@ -1,6 +1,7 @@
-// === Emily's InputPad v1.0 ===
+// === Emily's InputPad v2.0 ===
 // Role: External Input Device (Buttons, Dice, Choices)
-// Hardware: ESP32, TFT Display, 3 Buttons
+// Features: WiFi Captive Portal, UDP Comms, TFT Feedback
+// Hardware: ESP32, TFT Display (ST7789), 3 Buttons
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
@@ -8,21 +9,24 @@
 #include <TFT_eSPI.h> // Ensure User_Setup.h matches your hardware!
 #include <SPI.h>
 
-// --- USER CONFIGURATION ---
-const char* WIFI_SSID = "YOUR_WIFI_SSID";     // <-- CHANGE THIS
-const char* WIFI_PASS = "YOUR_WIFI_PASSWORD"; // <-- CHANGE THIS
+// --- WIFI MANAGER INCLUDES ---
+#include <WebServer.h>
+#include <DNSServer.h>
+#include <Preferences.h>
 
+// --- CONFIGURATION ---
 // EmilyBrain Address (Target)
 const char* EMILYBRAIN_IP = "192.168.68.201"; 
 const int EMILYBRAIN_PORT = 12345;
+const int INPUTPAD_LISTEN_PORT = 12349;
 
-// This Device (Source)
-// NOTE: Adjust Gateway/Subnet to match your local network!
+// This Device (Source) - Static IP Optional but recommended for speed
+// Set to false if you want DHCP
+bool use_static_ip = true;
 IPAddress INPUTPAD_STATIC_IP(192, 168, 68, 205); 
 IPAddress GATEWAY(192, 168, 68, 1);
 IPAddress SUBNET(255, 255, 255, 0);
 IPAddress PRIMARY_DNS(8, 8, 8, 8);
-const int INPUTPAD_LISTEN_PORT = 12349;
 
 // --- HARDWARE PINS ---
 // Ensure these do not conflict with your TFT pins defined in User_Setup.h
@@ -33,6 +37,9 @@ const int INPUTPAD_LISTEN_PORT = 12349;
 // --- OBJECTS ---
 TFT_eSPI tft = TFT_eSPI();
 WiFiUDP udp;
+WebServer server(80);
+DNSServer dnsServer;
+Preferences preferences;
 
 // --- GLOBALS ---
 String current_mode = "IDLE";
@@ -43,6 +50,10 @@ unsigned long lastHeartbeatTime = 0;
 
 // --- PROTOTYPES ---
 void setupWiFi();
+bool connectToWiFi(String ssid, String pass);
+void startAPMode();
+void handleRoot();
+void handleSave();
 void checkForCommands();
 void checkForButtonPress();
 void sendHeartbeat();
@@ -55,7 +66,7 @@ void sendUdpResponse(const JsonDocument& doc);
 // ========================
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n--- InputPad Firmware v1.0 ---");
+  Serial.println("\n--- InputPad Firmware v2.0 ---");
 
   // Buttons
   pinMode(BUTTON_A_PIN, INPUT_PULLUP);
@@ -64,26 +75,19 @@ void setup() {
 
   // TFT Init
   tft.init();
-  tft.setRotation(3); // Landscape usually
+  tft.setRotation(3); // Landscape
   tft.fillScreen(TFT_BLACK);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
-  tft.setCursor(10, 10);
-  tft.setTextSize(2);
-  tft.println("InputPad Booting...");
-
-  // Wi-Fi & UDP
-  setupWiFi();
   
+  // Wi-Fi Setup (Auto or AP Mode)
+  setupWiFi();
+
+  // Only proceed if connected
   if (WiFi.status() == WL_CONNECTED) {
     udp.begin(INPUTPAD_LISTEN_PORT);
     Serial.printf("UDP Listening on port %d\n", INPUTPAD_LISTEN_PORT);
     current_mode = "IDLE";
     updateDisplay();
-  } else {
-    tft.fillScreen(TFT_RED); 
-    tft.setCursor(10, 10);
-    tft.println("Wi-Fi Error!");
-    while(true) delay(100); // Halt
   }
 }
 
@@ -91,58 +95,128 @@ void setup() {
 // ===    MAIN LOOP     ===
 // ========================
 void loop() {
-  if (WiFi.status() == WL_CONNECTED) {
-    checkForCommands();
-    checkForButtonPress();
-    sendHeartbeat();
+  // If we are in AP Mode (Setup), handle web clients
+  if (WiFi.status() != WL_CONNECTED) {
+      server.handleClient();
+      dnsServer.processNextRequest();
+      delay(10);
+      return; 
   }
+
+  // Normal Operation
+  checkForCommands();
+  checkForButtonPress();
+  sendHeartbeat();
   delay(20);
 }
 
 // ========================
-// === HELPER FUNCTIONS ===
+// === WIFI MANAGER     ===
 // ========================
 
 void setupWiFi() {
-  tft.fillScreen(TFT_BLACK); 
-  tft.setCursor(10, 10); 
-  tft.setTextSize(2);
-  tft.println("Configuring IP...");
-  
-  if (!WiFi.config(INPUTPAD_STATIC_IP, GATEWAY, SUBNET, PRIMARY_DNS)) {
-    Serial.println("Static IP configuration failed!");
-  }
-  
-  tft.println("Connecting to WiFi...");
-  Serial.print("Connecting to WiFi...");
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+    preferences.begin("inputpad-wifi", false); 
+    String stored_ssid = preferences.getString("ssid", "");
+    String stored_pass = preferences.getString("pass", "");
+    preferences.end();
 
-  unsigned long startTijd = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - startTijd < 15000) {
-    delay(500); Serial.print("."); tft.print(".");
-  }
+    if (stored_ssid.length() > 0) {
+        tft.fillScreen(TFT_BLACK);
+        tft.setCursor(10, 10); tft.setTextSize(2);
+        tft.println("Connecting to:");
+        tft.setTextColor(TFT_GREEN, TFT_BLACK);
+        tft.println(stored_ssid);
+        tft.setTextColor(TFT_WHITE, TFT_BLACK);
 
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi Connected!");
-    Serial.print("IP Address: "); Serial.println(WiFi.localIP());
-    tft.fillScreen(TFT_BLACK); 
-    tft.setCursor(10, 10);
-    tft.println("Connected!"); 
-    tft.setTextSize(1);
-    tft.println(WiFi.localIP().toString());
-    delay(2000);
-  }
+        if (connectToWiFi(stored_ssid, stored_pass)) {
+            tft.fillScreen(TFT_BLACK);
+            tft.setCursor(10, 10);
+            tft.println("Connected!");
+            tft.setTextSize(1);
+            tft.setCursor(10, 40);
+            tft.println(WiFi.localIP().toString());
+            delay(1500);
+            return;
+        }
+        
+        tft.fillScreen(TFT_RED);
+        tft.setCursor(10, 10); tft.println("Connect Failed");
+        delay(1000);
+    }
+    
+    startAPMode();
 }
 
+bool connectToWiFi(String ssid, String pass) {
+    WiFi.mode(WIFI_STA);
+    if(use_static_ip) {
+        WiFi.config(INPUTPAD_STATIC_IP, GATEWAY, SUBNET, PRIMARY_DNS);
+    }
+
+    WiFi.begin(ssid.c_str(), pass.c_str());
+    unsigned long startTijd = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - startTijd < 15000) {
+        delay(500); Serial.print(".");
+    }
+    return (WiFi.status() == WL_CONNECTED);
+}
+
+void startAPMode() {
+    Serial.println("Starting AP Mode...");
+    WiFi.softAP("InputPad_Setup", "12345678"); 
+    
+    IPAddress AP_IP(192, 168, 4, 1);
+    WiFi.softAPConfig(AP_IP, AP_IP, IPAddress(255, 255, 255, 0));
+    dnsServer.start(53, "*", AP_IP);
+
+    // Display Instructions
+    tft.fillScreen(TFT_BLUE);
+    tft.setTextColor(TFT_WHITE, TFT_BLUE);
+    tft.setCursor(5, 5); tft.setTextSize(2);
+    tft.println("SETUP MODE");
+    tft.setTextSize(1);
+    tft.setCursor(5, 30);
+    tft.println("1. Connect to WiFi:");
+    tft.println("   'InputPad_Setup'");
+    tft.println("2. Password:");
+    tft.println("   '12345678'");
+    tft.println("3. Go to 192.168.4.1");
+
+    server.onNotFound([](){ handleRoot(); });
+    server.on("/", HTTP_GET, [](){ handleRoot(); });
+    server.on("/save", HTTP_POST, [](){ handleSave(); });
+    server.begin(); 
+}
+
+void handleRoot() {
+    String html = "<html><body><h2>InputPad WiFi Setup</h2><form action='/save' method='POST'>SSID: <input type='text' name='ssid'><br>Pass: <input type='password' name='pass'><br><input type='submit' value='Save'></form></body></html>";
+    server.send(200, "text/html", html);
+}
+
+void handleSave() {
+    String ssid = server.arg("ssid");
+    String pass = server.arg("pass");
+    
+    preferences.begin("inputpad-wifi", false); 
+    preferences.putString("ssid", ssid);
+    preferences.putString("pass", pass);
+    preferences.end();
+
+    server.send(200, "text/html", "<html><body><h1>Saved!</h1>Rebooting...</body></html>");
+    delay(1000);
+    ESP.restart();
+}
+
+// ========================
+// === LOGIC FUNCTIONS  ===
+// ========================
+
 void sendHeartbeat() {
-  if (WiFi.status() != WL_CONNECTED) return;
-  
   if (millis() - lastHeartbeatTime > 1500) { 
     StaticJsonDocument<128> doc;
     doc["id"] = "inputpad_v1"; 
     doc["state"] = current_mode; 
     doc["result_type"] = "heartbeat";
-
     sendUdpResponse(doc); 
     lastHeartbeatTime = millis();
   }
@@ -152,7 +226,6 @@ void updateDisplay() {
   tft.fillScreen(TFT_BLACK);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
 
-  // Center of screen (approx 320x170 usable)
   int mid_x = 160; 
   int mid_y = 85;
 
@@ -162,22 +235,19 @@ void updateDisplay() {
   } 
   else if (current_mode == "DICE") {
     tft.drawCentreString("Dice Mode", mid_x, mid_y - 30, 4);
-    
     tft.drawCentreString("(A) Press to Roll", mid_x, mid_y + 10, 2);
-    tft.drawCentreString("(1-" + String(dice_max) + ")", mid_x, mid_y + 30, 2);
+    tft.drawCentreString("Max: " + String(dice_max), mid_x, mid_y + 30, 2);
   } 
   else if (current_mode == "YES_NO") {
     tft.drawCentreString("Make a Choice", mid_x, 40, 4); 
-
     tft.drawString("(A) YES", mid_x - 100, mid_y + 20, 4); 
     tft.drawString("(B) NO", mid_x + 40, mid_y + 20, 4);
   } 
   else if (current_mode == "A_B_C") {
-     tft.drawCentreString("Make a Choice", mid_x, 30, 4); 
-
-     tft.drawString("(A) Option A", 40, mid_y + 20, 2); 
-     tft.drawCentreString("(B) Option B", mid_x, mid_y + 20, 2);
-     tft.drawString("(C) Option C", tft.width() - 110, mid_y + 20, 2);
+     tft.drawCentreString("Select Option", mid_x, 30, 4); 
+     tft.drawString("(A) Opt 1", 40, mid_y + 20, 2); 
+     tft.drawCentreString("(B) Opt 2", mid_x, mid_y + 20, 2);
+     tft.drawString("(C) Opt 3", tft.width() - 110, mid_y + 20, 2);
   }
 }
 
@@ -187,21 +257,17 @@ void checkForCommands() {
     char packetBuffer[packetSize + 1];
     udp.read(packetBuffer, packetSize);
     packetBuffer[packetSize] = '\0';
-    Serial.printf("UDP Command: %s\n", packetBuffer);
-
+    
     StaticJsonDocument<512> doc;
     DeserializationError error = deserializeJson(doc, packetBuffer);
 
-    if (error) {
-      Serial.print("JSON Error: "); Serial.println(error.c_str());
-      return;
-    }
-
-    const char* command = doc["command"];
-    if (command && strcmp(command, "set_mode") == 0) {
-      current_mode = doc["mode"] | "IDLE";
-      dice_max = doc["max"] | 6; 
-      updateDisplay(); 
+    if (!error) {
+        const char* command = doc["command"];
+        if (command && strcmp(command, "set_mode") == 0) {
+          current_mode = doc["mode"] | "IDLE";
+          dice_max = doc["max"] | 6; 
+          updateDisplay(); 
+        }
     }
   }
 }
@@ -213,35 +279,21 @@ void checkForButtonPress() {
 
   String value_str = "";
 
-  // Check Button A
   if (digitalRead(BUTTON_A_PIN) == LOW) {
-    Serial.println("Button A Pressed");
     value_str = "A";
-    
     if (current_mode == "DICE") {
       int roll = random(1, dice_max + 1);
       value_str = String(roll);
-
-      // Show Result Big
       tft.fillScreen(TFT_BLACK);
-      tft.drawCentreString(value_str, 160, 95, 7); 
+      tft.drawCentreString(value_str, 160, 95, 7); // Big Font
       delay(1500);
-      
-    } else if (current_mode == "YES_NO") { 
-        value_str = "YES"; 
-    }
+    } else if (current_mode == "YES_NO") { value_str = "YES"; }
   }
-  // Check Button B
   else if (digitalRead(BUTTON_B_PIN) == LOW) {
-    Serial.println("Button B Pressed");
     value_str = "B";
-    if (current_mode == "YES_NO") { 
-        value_str = "NO"; 
-    }
+    if (current_mode == "YES_NO") { value_str = "NO"; }
   }
-  // Check Button C
   else if (digitalRead(BUTTON_C_PIN) == LOW) {
-    Serial.println("Button C Pressed");
     value_str = "C";
   }
 
@@ -263,9 +315,7 @@ void sendInputResult(String value) {
 void sendUdpResponse(const JsonDocument& doc) {
   String output_string;
   serializeJson(doc, output_string);
-  
   udp.beginPacket(EMILYBRAIN_IP, EMILYBRAIN_PORT);
   udp.print(output_string);
   udp.endPacket();
-  Serial.printf("UDP Sent: %s\n", output_string.c_str());
 }
