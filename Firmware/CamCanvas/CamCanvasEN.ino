@@ -95,8 +95,8 @@ ConnectivityState conn_state = WAITING_FOR_BRAIN;
 unsigned long lastHeartbeatTime = 0;
 
 // --- USER CONFIGURATION (PLACEHOLDERS) ---
-const char* ssid = "YOUR_WIFI_SSID";          // <-- CHANGE THIS or use AP Setup
-const char* password = "YOUR_WIFI_PASSWORD";  // <-- CHANGE THIS or use AP Setup
+const char* ssid = "";          // 
+const char* password = "";  // 
 const char* venice_api_key = "YOUR_VENICE_API_KEY"; // <-- CHANGE THIS
 
 const char* vision_api_url = "https://api.venice.ai/api/v1/chat/completions";
@@ -133,7 +133,7 @@ void handleRoot();
 void handleSave();
 void slowPan(int targetAngle, int move_delay_ms);
 void slowTilt(int targetAngle, int move_delay_ms);
-void slowKnod(int targetAngle, int move_delay_ms);
+void slowNod(int targetAngle, int move_delay_ms);
 static void rgb565_to_grayscale(uint16_t *src_rgb565, uint8_t *dst_grayscale, int num_pixels);
 
 // --- TFT Callback ---
@@ -291,12 +291,12 @@ void handleCommand(char* commandJson) {
       slowTilt(tilt_target, 15);
   }
 
-  else if (command && strcmp(command, "knod_head") == 0) {
+  else if (command && strcmp(command, "nod_head") == 0) {
       int angle = doc["angle"] | 80; 
       angle = constrain(angle, TILT_MIN_ANGLE, TILT_MAX_ANGLE);
       
-      Serial.printf("Action: knod_head. Angle: %d\n", angle);
-      slowKnod(angle, 25);
+      Serial.printf("Action: nod_head. Angle: %d\n", angle);
+      slowNod(angle, 25);
   }
 
   else if (command && strcmp(command, "scan_qr") == 0) {
@@ -679,7 +679,7 @@ void slowTilt(int targetAngle, int move_delay_ms) {
     }
 }
 
-void slowKnod(int targetAngle, int move_delay_ms) {
+void slowNod(int targetAngle, int move_delay_ms) {
     int currentAngle = tiltServo.read(); 
     
     // Down
