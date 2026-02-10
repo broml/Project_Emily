@@ -41,8 +41,15 @@ Adafruit_NeoPixel pixels(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 #define MMC_D0_PIN   40
 
 // --- [4. SERVO & PIN DEFINITIONS] ---
-#define TILT_SERVO_PIN 2
-#define PAN_SERVO_PIN  1
+// #define TILT_SERVO_PIN 2
+// #define PAN_SERVO_PIN  1
+const int PAN_PIN = 1;   
+const int TILT_PIN = 2;
+// PWM Instellingen
+const int PWM_FREQ = 50;      // 50Hz voor servo's
+// const int PAN_CHANNEL = 2;    // Channel 2 (Camera gebruikt vaak 0 en 1)
+// const int TILT_CHANNEL = 3;   // Channel 3
+const int PWM_RESOLUTION = 14; // 14-bit resolutie
 
 // --- [5. INCLUDES] ---
 #include "esp_camera.h"
@@ -55,8 +62,6 @@ Adafruit_NeoPixel pixels(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 #include <WiFiClientSecure.h>
 #include <TJpg_Decoder.h>
 #include <TFT_eSPI.h>
-#include <ESP32Servo.h>
-#include "quirc.h" // QR Code Library
 
 // --- WIFI AP INCLUDES ---
 #include <WebServer.h>
@@ -75,8 +80,9 @@ unsigned long led_effect_end_time = 0;
 
 // --- TFT & SERVO OBJECTS ---
 TFT_eSPI tft = TFT_eSPI(); 
-Servo tiltServo;
-Servo panServo;
+
+// --- LEDC Method ---
+#include "esp32-hal-ledc.h" // Vaak niet eens nodig, maar voor de zekerheid
 
 // --- SERVO LIMITS ---
 #define TILT_MIN_ANGLE 60
@@ -95,9 +101,9 @@ ConnectivityState conn_state = WAITING_FOR_BRAIN;
 unsigned long lastHeartbeatTime = 0;
 
 // --- USER CONFIGURATION (PLACEHOLDERS) ---
-const char* ssid = "";          // 
-const char* password = "";  // 
-const char* venice_api_key = "YOUR_VENICE_API_KEY"; // <-- CHANGE THIS
+const char* ssid = "";        // not required to fill in, AP will take care
+const char* password = "";  // NR
+const char* venice_api_key = "YOUR_VENICE_API_KEY"; // <-- CHANGE THIS 
 
 const char* vision_api_url = "https://api.venice.ai/api/v1/chat/completions";
 const char* IMAGE_API_URL = "https://api.venice.ai/api/v1/image/generate";
@@ -174,15 +180,8 @@ void setup() {
     }
 
     // --- Step 4: Initialize Servos ---
-    Serial.println("Initializing Servos...");
-    tiltServo.attach(TILT_SERVO_PIN);
-    current_tilt_angle = TILT_NEUTRAL_ANGLE; 
-    tiltServo.write(current_tilt_angle); 
-
-    panServo.attach(PAN_SERVO_PIN);
-    current_pan_angle = 90; 
-    panServo.write(current_pan_angle);
-    Serial.println(">>> Servos OK. <<<");
+    
+    setupServos();
 
     // --- Step 5: Wi-Fi & Display Setup ---
     setupWiFi(); 
@@ -200,6 +199,41 @@ void setup() {
     }
 }
 
+// Helper voor ESP32 Core v3.x
+void moveServoRaw(int pin, int angle) {
+    if (angle < 0) angle = 0;
+    if (angle > 180) angle = 180;
+
+    // Mapping blijft hetzelfde (SG90, 50Hz, 14-bit)
+    // 0.5ms (410) tot 2.5ms (2048)
+    int duty = map(angle, 0, 180, 410, 2048);
+    
+    // In v3.x schrijf je naar de PIN
+    ledcWrite(pin, duty);
+}
+
+void setupServos() {
+    Serial.println("Initializing Servos (LEDC v3 Method)...");
+
+    // Syntax: ledcAttach(pin, freq, resolution)
+    // Dit koppelt de pin automatisch aan een vrije timer/channel.
+    if (!ledcAttach(PAN_PIN, PWM_FREQ, PWM_RESOLUTION)) {
+        Serial.println("ERROR: Failed to attach PAN servo!");
+    }
+    if (!ledcAttach(TILT_PIN, PWM_FREQ, PWM_RESOLUTION)) {
+        Serial.println("ERROR: Failed to attach TILT servo!");
+    }
+
+    // Startposities
+    moveServoRaw(PAN_PIN, 90);
+    moveServoRaw(TILT_PIN, 90);
+    
+    // Globals updaten
+    current_pan_angle = 90;
+    current_tilt_angle = 90;
+    
+    Serial.println("Servos Initialized.");
+}
 // ===================================
 // ===         MAIN LOOP           ===
 // ===================================
@@ -299,10 +333,7 @@ void handleCommand(char* commandJson) {
       slowNod(angle, 25);
   }
 
-  else if (command && strcmp(command, "scan_qr") == 0) {
-      Serial.println("Action: scan_qr. Starting viewfinder...");
-      performQrScanLoop(); 
-  }
+  
 
   else if (command && strcmp(command, "set_status_led") == 0) {
       led_r = doc["r"] | 0;
@@ -347,124 +378,6 @@ void sendHeartbeat() {
     
     lastHeartbeatTime = millis();
   }
-}
-
-// --- QR SCANNER LOGIC ---
-void performQrScanLoop() {
-  camera_fb_t *fb = NULL;
-  String qr_data = ""; 
-  bool code_found = false;
-  unsigned long startTime = millis();
-  const unsigned long scanTimeout_ms = 10000; 
-
-  qr_recognizer = quirc_new();
-  if (qr_recognizer == NULL) {
-    Serial.println("!!! Failed to create quirc object!");
-    sendUdpResponse(udp.remoteIP(), udp.remotePort(), "{\"status\":\"error\", \"message\":\"QR scanner init failed\"}");
-    return;
-  }
-
-  Serial.println("Switching to QVGA for QR scan...");
-  tft.fillScreen(TFT_BLACK);
-  tft.drawString("QR Scan Mode", 20, 20, 2);
-  
-  if (!initCamera(FRAMESIZE_QVGA)) {
-    Serial.println("!!! Failed to switch camera to QVGA!");
-    quirc_destroy(qr_recognizer); 
-    qr_recognizer = NULL;
-    sendUdpResponse(udp.remoteIP(), udp.remotePort(), "{\"status\":\"error\", \"message\":\"Camera QVGA failed\"}");
-    return;
-  }
-  
-  delay(200); 
-  
-  Serial.println("Starting Scan Loop...");
-  tft.setSwapBytes(true);
-  
-  while (millis() - startTime < scanTimeout_ms) {
-    fb = esp_camera_fb_get();
-    if (!fb) {
-      delay(100);
-      continue;
-    }
-
-    // A. Viewfinder
-    int16_t x_offset = (tft.width() - fb->width) / 2;
-    int16_t y_offset = (tft.height() - fb->height) / 2;
-    tft.pushImage(x_offset, y_offset, fb->width, fb->height, (uint16_t*)fb->buf);
-
-    // B. Scan
-    if (!code_found) {
-      int num_pixels = fb->width * fb->height;
-      uint8_t *grayscale_buffer = (uint8_t *)ps_malloc(num_pixels);
-      
-      if (grayscale_buffer) {
-        rgb565_to_grayscale((uint16_t*)fb->buf, grayscale_buffer, num_pixels);
-
-        if (quirc_resize(qr_recognizer, fb->width, fb->height) >= 0) {
-          quirc_end(qr_recognizer); 
-          int num_codes = quirc_count(qr_recognizer);
-          if (num_codes > 0) {
-            struct quirc_code code;
-            struct quirc_data data;
-            quirc_extract(qr_recognizer, 0, &code); 
-            
-            if (quirc_decode(&code, &data) == 0) {
-              qr_data = (char *)data.payload;
-              code_found = true;
-              Serial.printf(">>> QR Code FOUND: %s\n", qr_data.c_str());
-              
-              tft.drawRect(code.corners[0].x, code.corners[0].y, 
-                           code.corners[2].x - code.corners[0].x, 
-                           code.corners[2].y - code.corners[0].y, 
-                           TFT_GREEN);
-              delay(500);
-            }
-          }
-        }
-        free(grayscale_buffer);
-      }
-    } 
-
-    esp_camera_fb_return(fb); 
-    
-    if(code_found) {
-      break;
-    }
-  } 
-
-  quirc_destroy(qr_recognizer); 
-  qr_recognizer = NULL;
-  tft.setSwapBytes(false);
-  
-  Serial.println("Scan complete. Sending result...");
-  tft.fillScreen(TFT_BLACK);
-
-  JsonDocument udp_response_doc;
-  udp_response_doc["id"] = "camcanvas_v1";
-  udp_response_doc["result_type"] = "qr_scan";
-  
-  if (code_found) {
-    udp_response_doc["status"] = "success";
-    udp_response_doc["data"] = qr_data;
-    tft.drawString("QR Code Found!", 20, 20, 2);
-  } else {
-    udp_response_doc["status"] = "not_found";
-    Serial.println("No QR code found in time.");
-    tft.drawString("No QR Found", 20, 20, 2);
-  }
-
-  String response_string;
-  serializeJson(udp_response_doc, response_string);
-  sendUdpResponse(udp.remoteIP(), udp.remotePort(), response_string);
-
-  delay(1000); 
-
-  Serial.println("Restoring camera to SVGA...");
-  initCamera(FRAMESIZE_SVGA);
-  
-  tft.fillScreen(TFT_BLACK);
-  tft.drawString("CamCanvas Ready.", 45, 220, 4);
 }
 
 
@@ -641,20 +554,21 @@ void takeAndSavePhoto(IPAddress remoteIp, uint16_t remotePort) {
   free(out_buf);
 }
 
-// --- SERVO MOVEMENT ---
-void slowPan(int targetAngle, int move_delay_ms) {
-    int currentAngle = panServo.read(); 
-    current_pan_angle = targetAngle; 
 
-    if (targetAngle > currentAngle) {
-        for (int angle = currentAngle; angle <= targetAngle; angle++) {
-            panServo.write(angle);
-            current_pan_angle = angle;
+// --- SERVO MOVEMENT (LEDC / PWM VERSION) ---
+
+void slowPan(int targetAngle, int move_delay_ms) {
+    int startAngle = current_pan_angle; 
+    
+    if (targetAngle > startAngle) {
+        for (int angle = startAngle; angle <= targetAngle; angle++) {
+            moveServoRaw(PAN_PIN, angle); // <--- PIN meegeven
+            current_pan_angle = angle;        
             delay(move_delay_ms);
         }
     } else {
-        for (int angle = currentAngle; angle >= targetAngle; angle--) {
-            panServo.write(angle);
+        for (int angle = startAngle; angle >= targetAngle; angle--) {
+            moveServoRaw(PAN_PIN, angle); // <--- PIN meegeven
             current_pan_angle = angle;
             delay(move_delay_ms);
         }
@@ -662,17 +576,17 @@ void slowPan(int targetAngle, int move_delay_ms) {
 }
 
 void slowTilt(int targetAngle, int move_delay_ms) {
-    int currentAngle = tiltServo.read(); 
+    int startAngle = current_tilt_angle; 
     
-    if (targetAngle > currentAngle) {
-        for (int angle = currentAngle; angle <= targetAngle; angle++) {
-            tiltServo.write(angle);
+    if (targetAngle > startAngle) {
+        for (int angle = startAngle; angle <= targetAngle; angle++) {
+            moveServoRaw(TILT_PIN, angle); // <--- PIN meegeven
             current_tilt_angle = angle;
             delay(move_delay_ms);
         }
     } else {
-        for (int angle = currentAngle; angle >= targetAngle; angle--) {
-            tiltServo.write(angle);
+        for (int angle = startAngle; angle >= targetAngle; angle--) {
+            moveServoRaw(TILT_PIN, angle); // <--- PIN meegeven
             current_tilt_angle = angle;
             delay(move_delay_ms);
         }
@@ -680,20 +594,39 @@ void slowTilt(int targetAngle, int move_delay_ms) {
 }
 
 void slowNod(int targetAngle, int move_delay_ms) {
-    int currentAngle = tiltServo.read(); 
+    int startAngle = current_tilt_angle; 
     
-    // Down
-    for (int angle = currentAngle; angle >= targetAngle; angle--) {
-            tiltServo.write(angle);
+    // Stap 1: Naar target
+    if (targetAngle < startAngle) {
+        for (int angle = startAngle; angle >= targetAngle; angle--) {
+            moveServoRaw(TILT_PIN, angle); // <--- PIN meegeven
             current_tilt_angle = angle; 
             delay(move_delay_ms);
         }
-    // Up
-    for (int angle = targetAngle; angle <= currentAngle; angle++) {
-            tiltServo.write(angle);
+    } else {
+         for (int angle = startAngle; angle <= targetAngle; angle++) {
+            moveServoRaw(TILT_PIN, angle); // <--- PIN meegeven
             current_tilt_angle = angle; 
             delay(move_delay_ms);
         }
+    }
+
+    delay(100); 
+
+    // Stap 2: Terug
+    if (targetAngle < startAngle) {
+        for (int angle = targetAngle; angle <= startAngle; angle++) {
+            moveServoRaw(TILT_PIN, angle); // <--- PIN meegeven
+            current_tilt_angle = angle; 
+            delay(move_delay_ms);
+        }
+    } else {
+        for (int angle = targetAngle; angle >= startAngle; angle--) {
+            moveServoRaw(TILT_PIN, angle); // <--- PIN meegeven
+            current_tilt_angle = angle; 
+            delay(move_delay_ms);
+        }
+    }
 }
 
 // --- IMAGE GENERATION ---
