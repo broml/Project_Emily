@@ -37,9 +37,9 @@
 #define PIN_WAKE_BUTTON  4
 #define PIN_NEOPIXEL 48
 
-// --- WiFi Configuration (User to Update) ---
-#define WIFI_SSID "YOUR_WIFI_SSID"      // <-- CHANGE THIS
-#define WIFI_PASS "YOUR_WIFI_PASSWORD"  // <-- CHANGE THIS
+// --- WiFi Configuration (Credentials are Obsolete) ---
+// #define WIFI_SSID ""      // 
+// #define WIFI_PASS ""  // 
 #define UDP_LISTEN_PORT 12345
 
 // --- IP Addresses for Modules (Static Config) ---
