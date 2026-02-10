@@ -1,7 +1,11 @@
-// === Emily's InputPad v2.0 ===
+// === Emily's InputPad v2.0 (Fixed for ESP32 v3.x) ===
 // Role: External Input Device (Buttons, Dice, Choices)
 // Features: WiFi Captive Portal, UDP Comms, TFT Feedback
 // Hardware: ESP32, TFT Display (ST7789), 3 Buttons
+
+// --- BELANGRIJKE FIX VOOR ESP32 V3.x ---
+#include <FS.h> 
+// ---------------------------------------
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
@@ -15,7 +19,7 @@
 #include <Preferences.h>
 
 // --- CONFIGURATION ---
-// EmilyBrain Address (Target)
+// EmilyBrain Address (Target) - Zorg dat dit matcht met Emily's Static IP!
 const char* EMILYBRAIN_IP = "192.168.68.201"; 
 const int EMILYBRAIN_PORT = 12345;
 const int INPUTPAD_LISTEN_PORT = 12349;
@@ -272,6 +276,24 @@ void checkForCommands() {
   }
 }
 
+// Zorg dat de prototypes kloppen, we verplaatsen de logica iets voor de zekerheid
+// Maar met de prototypes bovenin zou dit moeten werken.
+
+void sendUdpResponse(const JsonDocument& doc) {
+  String output_string;
+  serializeJson(doc, output_string);
+  udp.beginPacket(EMILYBRAIN_IP, EMILYBRAIN_PORT);
+  udp.print(output_string);
+  udp.endPacket();
+}
+
+void sendInputResult(String value) {
+  StaticJsonDocument<128> doc;
+  doc["event"] = "input_received";
+  doc["value"] = value;
+  sendUdpResponse(doc);
+}
+
 void checkForButtonPress() {
   if (current_mode == "IDLE" || millis() - last_press_time < DEBOUNCE_DELAY) {
     return;
@@ -303,19 +325,4 @@ void checkForButtonPress() {
     updateDisplay();
     last_press_time = millis();
   }
-}
-
-void sendInputResult(String value) {
-  StaticJsonDocument<128> doc;
-  doc["event"] = "input_received";
-  doc["value"] = value;
-  sendUdpResponse(doc);
-}
-
-void sendUdpResponse(const JsonDocument& doc) {
-  String output_string;
-  serializeJson(doc, output_string);
-  udp.beginPacket(EMILYBRAIN_IP, EMILYBRAIN_PORT);
-  udp.print(output_string);
-  udp.endPacket();
 }
