@@ -26,6 +26,7 @@ EmilyBrain::EmilyBrain() : status_led(1, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800), di
 void EmilyBrain::setup() {
     Serial.begin(115200);
     while (!Serial);
+    
     Serial.println("EmilyBrain Dual-Bus Startup... (Final Boot Sequence)");
     pinMode(PIN_WAKE_BUTTON, INPUT_PULLUP);
     Serial.println("Wake button pin configured.");
@@ -1585,9 +1586,9 @@ String EmilyBrain::buildSelfAwarenessReport(JsonObject device_status) {
     report += DESC_CORE; // Core description
     report += "\nMy physical body has the following additional components currently online:\n";
 
-    if (device_status["os_online"]) {
-        report += DESC_OS;
-    }
+    // if (device_status["os_online"]) {
+    //     report += DESC_OS;
+    // }
     if (device_status["camcanvas_online"]) {
         report += DESC_CAMCANVAS;
     }
