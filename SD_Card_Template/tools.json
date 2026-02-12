@@ -3,15 +3,21 @@
     "type": "function",
     "function": {
       "name": "update_emotional_state",
-      "description": "The final action in a cycle to set the internal emotional state. Use this to achieve homeostasis (low Arousal, high Valence) when a task is complete or the user is satisfied.",
+      "description": "Sets the internal emotional state. Triggers homeostasis (sleep/idle) when Arousal is < 0.1. Use this when a task is complete.",
       "parameters": {
         "type": "object",
         "properties": {
-          "new_arousal": { "type": "number", "description": "Target arousal (-1.0 to 1.0)." },
-          "new_valence": { "type": "number", "description": "Target valence (-1.0 to 1.0)." },
+          "new_arousal": { 
+            "type": "number", 
+            "description": "Energy level: 0.0 (Sleep/Calm) to 1.0 (Hyper/High Energy)." 
+          },
+          "new_valence": { 
+            "type": "number", 
+            "description": "Mood: -1.0 (Negative/Sad) to 1.0 (Positive/Happy)." 
+          },
           "sound_effect": {
             "type": "string",
-            "description": "Optional sound file matching the emotion.",
+            "description": "Short feedback sound for the state change.",
             "enum": [
               "/sounds/positive/notify_happy.wav",
               "/sounds/positive/notify_bright.wav",
@@ -21,144 +27,256 @@
           },
           "visual_prompt": {
             "type": "string",
-            "description": "Optional. A generic ENGLISH prompt for an abstract background image representing the emotion."
+            "description": "Optional. English prompt for an image representing the emotion."
           },
           "image_model": {
             "type": "string",
-            "description": "Model selection.",
             "enum": ["venice-sd35", "hidream", "qwen-image", "wai-Illustrious", "lustify-v7"]
           },
           "led_effect": {
             "type": "string",
-            "description": "Visual LED effect on the camera module.",
+            "description": "Optional. Visual LED effect on CamCanvas.",
             "enum": ["none", "pulse", "blink"]
           },
-          "led_r": { "type": "integer" },
-          "led_g": { "type": "integer" },
-          "led_b": { "type": "integer" },
-          "led_speed": { "type": "integer" }
+          "led_r": { "type": "integer", "description": "Optional. Red value (0-255)." },
+          "led_g": { "type": "integer", "description": "Optional. Green value (0-255)." },
+          "led_b": { "type": "integer", "description": "Optional. Blue value (0-255)." },
+          "led_speed": { "type": "integer", "description": "Optional. Speed in ms." }
         },
         "required": ["new_arousal", "new_valence"]
       }
-    },
-    "required_devices": []
+    }
   },
   {
     "type": "function",
     "function": {
       "name": "announce_message",
-      "description": "Speaks a one-way informational message. No user reply expected. For questions, use start_conversation.",
+      "description": "Speaks a one-way announcement. No user reply expected. CRITICAL: Use start_conversation if you want a reply.",
       "parameters": {
         "type": "object",
         "properties": {
           "announcement": { "type": "string", "description": "The text to speak." },
-          "visual_prompt": { "type": "string", "description": "Optional image prompt describing the topic." },
-          "image_model": { "type": "string", "enum": ["venice-sd35", "qwen-image"] }
+          "visual_prompt": { "type": "string", "description": "Optional English image prompt related to the text." },
+          "image_model": { 
+            "type": "string",
+            "enum": ["venice-sd35", "hidream", "qwen-image", "wai-Illustrious", "lustify-v7"]
+          },
+          "led_effect": {
+            "type": "string",
+            "description": "Optional. Visual LED effect on CamCanvas.",
+            "enum": ["none", "pulse", "blink"]
+          },
+          "led_r": { "type": "integer", "description": "Optional. Red value (0-255)." },
+          "led_g": { "type": "integer", "description": "Optional. Green value (0-255)." },
+          "led_b": { "type": "integer", "description": "Optional. Blue value (0-255)." },
+          "led_speed": { "type": "integer", "description": "Optional. Speed in ms." }
         },
         "required": ["announcement"]
       }
-    },
-    "required_devices": []
+    }
   },
   {
     "type": "function",
     "function": {
       "name": "start_conversation",
-      "description": "Starts an interactive conversation by asking a question. The system will listen for a response afterwards.",
+      "description": "Starts an interactive conversation. Asks a question and waits for a user reply.",
       "parameters": {
         "type": "object",
         "properties": {
-          "question": { "type": "string", "description": "The question to ask the user." },
-          "visual_prompt": { "type": "string", "description": "Optional image prompt." },
-          "image_model": { "type": "string", "enum": ["venice-sd35", "qwen-image"] }
+          "question": { "type": "string", "description": "The question to ask." },
+          "visual_prompt": { "type": "string", "description": "Optional English image prompt related to the question." },
+          "image_model": { 
+             "type": "string",
+             "enum": ["venice-sd35", "hidream", "qwen-image", "wai-Illustrious", "lustify-v7"]
+          },
+          "led_effect": {
+            "type": "string",
+            "description": "Optional. Visual LED effect on CamCanvas.",
+            "enum": ["none", "pulse", "blink"]
+          },
+          "led_r": { "type": "integer", "description": "Optional. Red value (0-255)." },
+          "led_g": { "type": "integer", "description": "Optional. Green value (0-255)." },
+          "led_b": { "type": "integer", "description": "Optional. Blue value (0-255)." },
+          "led_speed": { "type": "integer", "description": "Optional. Speed in ms." }
         },
         "required": ["question"]
       }
-    },
-    "required_devices": []
+    }
   },
   {
     "type": "function",
     "function": {
       "name": "analyze_visual_environment",
-      "description": "Uses the camera to analyze the environment. Use this to answer 'what do you see?' or investigate triggers.",
+      "description": "Uses the camera to analyze the visual environment or answer a question about what is seen.",
       "parameters": {
         "type": "object",
         "properties": {
-          "question": { "type": "string", "description": "Specific question about the image." },
-          "use_flash": { "type": "boolean", "description": "Set true for low-light conditions." },
-          "angle": { "type": "number", "description": "Optional: Rotate base to angle (0-359) before looking." }
+          "question": { "type": "string", "description": "Specific question about the view." },
+          "use_flash": { "type": "boolean", "description": "Set true for low light." }
         },
         "required": ["question"]
-      }
-    },
-    "required_devices": ["CAMCANVAS"]
+      },
+      "required_devices": ["CAMCANVAS"]
+    }
   },
   {
     "type": "function",
     "function": {
       "name": "generate_image",
-      "description": "Generates an image on the display based on a prompt.",
+      "description": "Generates an image on the display based on an English prompt.",
       "parameters": {
         "type": "object",
         "properties": {
           "prompt": { "type": "string", "description": "Detailed English description." },
-          "image_model": { "type": "string", "enum": ["venice-sd35", "qwen-image", "wai-Illustrious"] },
-          "sound_effect": { "type": "string", "description": "Optional sound effect to play upon completion." }
+          "image_model": { 
+             "type": "string", 
+             "enum": ["venice-sd35", "hidream", "qwen-image", "wai-Illustrious", "lustify-v7"]
+          },
+          "sound_effect": {
+            "type": "string",
+            "description": "Optional atmospheric sound to play during generation.",
+            "enum": [
+              "/sounds/ambiance/magical_shimmer.wav",
+              "/sounds/ambiance/cave_drips.wav",
+              "/sounds/ambiance/forest_wind.wav",
+              "/sounds/ambiance/creepy_drone.wav",
+              "/sounds/ambiance/heartbeat_tense.wav",
+              "/sounds/events/stone_door_open.wav",
+              "/sounds/events/monster_growl.wav",
+              "/sounds/events/treasure_reveal.wav",
+              "/sounds/events/footsteps_stone.wav",
+              "/sounds/events/sword_clash.wav",
+              "/sounds/notification/transform_sound.wav"
+            ]
+          },
+          "led_effect": {
+            "type": "string",
+            "description": "Optional. Visual LED effect on CamCanvas.",
+            "enum": ["none", "pulse", "blink"]
+          },
+          "led_r": { "type": "integer", "description": "Optional. Red value (0-255)." },
+          "led_g": { "type": "integer", "description": "Optional. Green value (0-255)." },
+          "led_b": { "type": "integer", "description": "Optional. Blue value (0-255)." },
+          "led_speed": { "type": "integer", "description": "Optional. Speed in ms." }
         },
-        "required": ["prompt", "image_model"]
+        "required": ["prompt", "image_model"],
+        "required_devices": ["CAMCANVAS"]
       }
-    },
-    "required_devices": ["CAMCANVAS"]
+    }
   },
   {
     "type": "function",
     "function": {
       "name": "play_sound_effect",
-      "description": "Plays a non-verbal sound effect for atmosphere or feedback.",
+      "description": "Plays an atmospheric or event sound effect.",
       "parameters": {
         "type": "object",
         "properties": {
           "sound_path": {
             "type": "string",
-            "description": "Full path to wav file.",
             "enum": [
               "/sounds/ambiance/cave_drips.wav",
               "/sounds/ambiance/forest_wind.wav",
+              "/sounds/ambiance/creepy_drone.wav",
+              "/sounds/ambiance/magical_shimmer.wav",
+              "/sounds/ambiance/heartbeat_tense.wav",
               "/sounds/events/stone_door_open.wav",
               "/sounds/events/monster_growl.wav",
+              "/sounds/events/treasure_reveal.wav",
+              "/sounds/events/footsteps_stone.wav",
               "/sounds/events/sword_clash.wav",
               "/sounds/feedback/confirm_choice.wav",
-              "/sounds/feedback/error_buzz.wav"
+              "/sounds/feedback/error_buzz.wav",
+              "/sounds/feedback/item_pickup.wav",
+              "/sounds/moans/female_playful_agree_short.wav",
+              "/sounds/notification/transform_sound.wav",
+              "/sounds/notification/transform_alert_long.wav",
+              "/sounds/notification/transform_alert_short.wav",
+              "/sounds/notification/transform_alert_voice_woman.wav"
             ]
-          }
+          },
+          "led_effect": {
+            "type": "string",
+            "description": "Optional. Visual LED effect on CamCanvas.",
+            "enum": ["none", "pulse", "blink"]
+          },
+          "led_r": { "type": "integer", "description": "Optional. Red value (0-255)." },
+          "led_g": { "type": "integer", "description": "Optional. Green value (0-255)." },
+          "led_b": { "type": "integer", "description": "Optional. Blue value (0-255)." },
+          "led_speed": { "type": "integer", "description": "Optional. Speed in ms." }
         },
         "required": ["sound_path"]
       }
-    },
-    "required_devices": []
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "move_head",
+      "description": "Moves the head/camera mechanism.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "pan": { "type": "integer", "description": "Horizontal angle (0-180). 90 is center." },
+          "tilt": { "type": "integer", "description": "Vertical angle (80-130). 90 is center." },
+          "led_effect": {
+            "type": "string",
+            "description": "Optional. Visual LED effect on CamCanvas.",
+            "enum": ["none", "pulse", "blink"]
+          },
+          "led_r": { "type": "integer", "description": "Optional. Red value (0-255)." },
+          "led_g": { "type": "integer", "description": "Optional. Green value (0-255)." },
+          "led_b": { "type": "integer", "description": "Optional. Blue value (0-255)." },
+          "led_speed": { "type": "integer", "description": "Optional. Speed in ms." }
+        },
+        "required": ["pan", "tilt"],
+        "required_devices": ["CAMCANVAS"]
+      }
+    }
   },
   {
     "type": "function",
     "function": {
       "name": "nod_head",
-      "description": "Nods the camera vertically to express agreement or emotion.",
+      "description": "Nods the head 'yes'.",
       "parameters": {
         "type": "object",
         "properties": {
-          "angle": { "type": "integer", "description": "Target angle (e.g. 85)." }
+          "angle": { "type": "integer", "description": "Target angle (usually 85)." },
+          "led_effect": {
+            "type": "string",
+            "description": "Optional. Visual LED effect on CamCanvas.",
+            "enum": ["none", "pulse", "blink"]
+          },
+          "led_r": { "type": "integer", "description": "Optional. Red value (0-255)." },
+          "led_g": { "type": "integer", "description": "Optional. Green value (0-255)." },
+          "led_b": { "type": "integer", "description": "Optional. Blue value (0-255)." },
+          "led_speed": { "type": "integer", "description": "Optional. Speed in ms." }
         },
-        "required": ["angle"]
+        "required": ["angle"],
+        "required_devices": ["CAMCANVAS"]
       }
-    },
-    "required_devices": ["CAMCANVAS"]
+    }
   },
   {
     "type": "function",
     "function": {
       "name": "take_photo",
-      "description": "Takes a photo and saves it to the local SD card without analyzing it.",
-      "parameters": {},
+      "description": "Takes a photo and saves it to SD card.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+           "led_effect": {
+            "type": "string",
+            "description": "Optional. Visual LED effect on CamCanvas.",
+            "enum": ["none", "pulse", "blink"]
+          },
+          "led_r": { "type": "integer", "description": "Optional. Red value (0-255)." },
+          "led_g": { "type": "integer", "description": "Optional. Green value (0-255)." },
+          "led_b": { "type": "integer", "description": "Optional. Blue value (0-255)." },
+          "led_speed": { "type": "integer", "description": "Optional. Speed in ms." }
+        }
+      },
       "required_devices": ["CAMCANVAS"]
     }
   },
@@ -166,94 +284,46 @@
     "type": "function",
     "function": {
       "name": "retrieve_local_data",
-      "description": "Retrieves specific local data based on a key (CMS).",
+      "description": "Retrieves specific data from the CMS.",
       "parameters": {
         "type": "object",
         "properties": {
           "key": {
             "type": "string",
-            "description": "The lookup key.",
-            "enum": ["user_profile", "family_context", "game_rules", "secret_history"]
+            "description": "The key to look up.",
+            "enum": ["vrouw_van_menno", "moeder_van_menno", "oom_van_menno", "herinnering_tante_sjaan", "jos_en_stephan", "bedroom", "wardrobe", "inside_wardrobe", "secret_letter"]
           }
         },
         "required": ["key"]
       }
-    },
-    "required_devices": []
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "activate_inputpad",
-      "description": "Activates the external InputPad to wait for user input (Dice, Yes/No, etc).",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "mode": {
-            "type": "string",
-            "description": "Input mode.",
-            "enum": ["IDLE", "DICE", "YES_NO", "A_B_C"]
-          },
-          "max_value": { "type": "integer", "description": "Max value for DICE mode (e.g., 6 or 20)." }
-        },
-        "required": ["mode"]
-      }
-    },
-    "required_devices": ["INPUTPAD"]
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "move_head",
-      "description": "Moves the camera head (Pan/Tilt).",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "pan": { "type": "integer", "description": "Horizontal angle (0-180)." },
-          "tilt": { "type": "integer", "description": "Vertical angle (80-130)." }
-        },
-        "required": ["pan", "tilt"]
-      }
-    },
-    "required_devices": ["CAMCANVAS"]
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "rotate_to_angle",
-      "description": "Rotates the entire base unit (OS) to a specific compass heading.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "angle": { "type": "number", "description": "Target angle (0-359)." }
-        },
-        "required": ["angle"]
-      }
-    },
-    "required_devices": ["OS"]
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "calibrate_base",
-      "description": "Calibrates the base rotation sensor.",
-      "parameters": {},
-      "required_devices": ["OS"]
     }
   },
   {
     "type": "function",
     "function": {
-      "name": "tilt_head",
-      "description": "Tilts the camera head only.",
+      "name": "activate_inputpad",
+      "description": "Activates the InputPad to wait for user input.",
       "parameters": {
         "type": "object",
         "properties": {
-          "angle": { "type": "integer", "description": "Vertical angle." }
+          "mode": {
+            "type": "string",
+            "enum": ["IDLE", "DICE", "YES_NO", "A_B_C"]
+          },
+          "max_value": { "type": "integer", "description": "For DICE mode only." },
+          "led_effect": {
+            "type": "string",
+            "description": "Optional. Visual LED effect on CamCanvas.",
+            "enum": ["none", "pulse", "blink"]
+          },
+          "led_r": { "type": "integer", "description": "Optional. Red value (0-255)." },
+          "led_g": { "type": "integer", "description": "Optional. Green value (0-255)." },
+          "led_b": { "type": "integer", "description": "Optional. Blue value (0-255)." },
+          "led_speed": { "type": "integer", "description": "Optional. Speed in ms." }
         },
-        "required": ["angle"]
+        "required": ["mode"],
+        "required_devices": ["INPUTPAD"]
       }
-    },
-    "required_devices": ["CAMCANVAS"]
+    }
   }
 ]
