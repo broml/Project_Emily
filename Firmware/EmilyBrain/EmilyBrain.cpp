@@ -26,7 +26,6 @@ EmilyBrain::EmilyBrain() : status_led(1, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800), di
 void EmilyBrain::setup() {
     Serial.begin(115200);
     while (!Serial);
-    
     Serial.println("EmilyBrain Dual-Bus Startup... (Final Boot Sequence)");
     pinMode(PIN_WAKE_BUTTON, INPUT_PULLUP);
     Serial.println("Wake button pin configured.");
@@ -489,9 +488,9 @@ void EmilyBrain::_handle_ai_response(const char* user_prompt_json_str, JsonArray
         led_args_doc["command"] = "set_status_led"; 
         led_args_doc["effect"] = all_args["led_effect"];
         led_args_doc["r"] = all_args["led_r"] | 0; 
-        led_args_doc["g"] = all_args["g"] | 0;
-        led_args_doc["b"] = all_args["b"] | 0;
-        led_args_doc["speed"] = all_args["speed"] | 1000; 
+        led_args_doc["g"] = all_args["led_g"] | 0;
+        led_args_doc["b"] = all_args["led_b"] | 0;
+        led_args_doc["speed"] = all_args["led_speed"] | 1000; 
         
         addTask("CAMCANVAS_SET_LED", led_args_doc); 
     }
@@ -529,7 +528,7 @@ void EmilyBrain::_handle_ai_response(const char* user_prompt_json_str, JsonArray
     }
 
     // 3. Speech: announce_message OR start_conversation
-    // (Replaces geef_mededeling / start_gesprek)
+    
     else if (!main_task_planned && (active_tool_call_name == "announce_message" || active_tool_call_name == "start_conversation")) {
         StaticJsonDocument<1024> speak_args_doc; 
         
@@ -542,7 +541,7 @@ void EmilyBrain::_handle_ai_response(const char* user_prompt_json_str, JsonArray
     }
 
     // 4. Movement: move_head
-    // (Replaces draai_naar_hoek AND adds tilt)
+    
     else if (!main_task_planned && active_tool_call_name == "move_head") {
         StaticJsonDocument<128> head_args_doc;
         head_args_doc["pan"] = all_args["pan"] | 90; 
@@ -552,7 +551,7 @@ void EmilyBrain::_handle_ai_response(const char* user_prompt_json_str, JsonArray
     }
 
     // 5. Image: generate_image
-    // (Replaces genereer_afbeelding)
+    
     else if (!main_task_planned && active_tool_call_name == "generate_image") {
         StaticJsonDocument<1024> gen_img_args_doc;
         gen_img_args_doc["prompt"] = all_args["prompt"];
@@ -588,7 +587,7 @@ void EmilyBrain::_handle_ai_response(const char* user_prompt_json_str, JsonArray
     }
 
     // 9. InputPad: activate_inputpad
-    // (Replaces activeer_inputpad)
+    
     else if (!main_task_planned && active_tool_call_name == "activate_inputpad") {
         StaticJsonDocument<256> input_args_doc;
         input_args_doc["mode"] = all_args["mode"];
@@ -598,7 +597,7 @@ void EmilyBrain::_handle_ai_response(const char* user_prompt_json_str, JsonArray
     }
 
     // 10. CMS Data: retrieve_local_data
-    // (Replaces zoek_data_op)
+    
     else if (!main_task_planned && active_tool_call_name == "retrieve_local_data") {
         StaticJsonDocument<256> data_args_doc;
         data_args_doc["key"] = all_args["key"]; // English key
@@ -1236,25 +1235,20 @@ void EmilyBrain::_continue_task() {
     else if (next_task.type == "CB_SPEAK") {
         const char* text_to_speak = nullptr; 
 
-        // Check English keys first
+        // Check English keys
         if (next_task.args.containsKey("announcement")) {
             text_to_speak = next_task.args["announcement"];
         } else if (next_task.args.containsKey("question")) {
             text_to_speak = next_task.args["question"];
         }
-        // Fallback for legacy keys (safety)
-        else if (next_task.args.containsKey("mededeling")) {
-            text_to_speak = next_task.args["mededeling"];
-        } else if (next_task.args.containsKey("vraag")) {
-            text_to_speak = next_task.args["vraag"];
-        }
+        
 
         if (text_to_speak != nullptr && strlen(text_to_speak) > 0) {
              Serial.printf("Executor: Starting TTS for: '%s'\n", text_to_speak);
             last_display_text = text_to_speak;
              
              // Check against English tool name
-             if (active_tool_call_name == "start_conversation" || active_tool_call_name == "start_gesprek") {
+             if (active_tool_call_name == "start_conversation") {
                  next_state_after_audio = EmilyState::AWAITING_SPEECH; 
                  Serial.println("Executor: Will transition to AWAITING_SPEECH after speaking.");
              } else { 
@@ -1295,25 +1289,6 @@ void EmilyBrain::_continue_task() {
 
         camcanvas_task_start_time = millis(); // Start timer
         setState(EmilyState::SEEING); // Set waiting state
-    }
-
-    // --- CAM_TILT Task ---
-    else if (next_task.type == "CAM_TILT") {
-        int angle = next_task.args["angle"] | 90; 
-
-        StaticJsonDocument<128> cmd_doc;
-        cmd_doc["command"] = "tilt_head";
-        cmd_doc["angle"] = angle;
-        String command_string;
-        serializeJson(cmd_doc, command_string);
-
-        Serial.printf("Executor: Sending CAMCANVAS command (Tilt): %s\n", command_string.c_str());
-        udp.beginPacket(CAMCANVAS_IP_ADDRESS, CAMCANVAS_UDP_PORT); 
-        udp.print(command_string);
-        udp.endPacket();
-
-        task_completed_immediately = true; 
-        Serial.println("Executor: Tilt command sent to CAMCANVAS."); 
     }
 
     // --- CAM_NOD Task ---
@@ -1586,9 +1561,9 @@ String EmilyBrain::buildSelfAwarenessReport(JsonObject device_status) {
     report += DESC_CORE; // Core description
     report += "\nMy physical body has the following additional components currently online:\n";
 
-    // if (device_status["os_online"]) {
-    //     report += DESC_OS;
-    // }
+    if (device_status["os_online"]) {
+        report += DESC_OS;
+    }
     if (device_status["camcanvas_online"]) {
         report += DESC_CAMCANVAS;
     }
