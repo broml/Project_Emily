@@ -1561,9 +1561,6 @@ String EmilyBrain::buildSelfAwarenessReport(JsonObject device_status) {
     report += DESC_CORE; // Core description
     report += "\nMy physical body has the following additional components currently online:\n";
 
-    if (device_status["os_online"]) {
-        report += DESC_OS;
-    }
     if (device_status["camcanvas_online"]) {
         report += DESC_CAMCANVAS;
     }
