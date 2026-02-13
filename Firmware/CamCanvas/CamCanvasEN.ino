@@ -85,9 +85,9 @@ TFT_eSPI tft = TFT_eSPI();
 #include "esp32-hal-ledc.h" // Vaak niet eens nodig, maar voor de zekerheid
 
 // --- SERVO LIMITS ---
-#define TILT_MIN_ANGLE 60
+#define TILT_MIN_ANGLE 50
 #define TILT_NEUTRAL_ANGLE 90
-#define TILT_MAX_ANGLE 130
+#define TILT_MAX_ANGLE 135
 
 int current_pan_angle = 90;
 int current_tilt_angle = TILT_NEUTRAL_ANGLE;
@@ -103,7 +103,7 @@ unsigned long lastHeartbeatTime = 0;
 // --- USER CONFIGURATION (PLACEHOLDERS) ---
 const char* ssid = "";        // not required to fill in, AP will take care
 const char* password = "";  // NR
-const char* venice_api_key = "YOUR_VENICE_API_KEY"; // <-- CHANGE THIS 
+const char* venice_api_key = "YOUR_VENICE_API_KEY"; // <-- CHANGE THIS
 
 const char* vision_api_url = "https://api.venice.ai/api/v1/chat/completions";
 const char* IMAGE_API_URL = "https://api.venice.ai/api/v1/image/generate";
@@ -326,7 +326,7 @@ void handleCommand(char* commandJson) {
   }
 
   else if (command && strcmp(command, "nod_head") == 0) {
-      int angle = doc["angle"] | 80; 
+      int angle = doc["angle"] | 105; 
       angle = constrain(angle, TILT_MIN_ANGLE, TILT_MAX_ANGLE);
       
       Serial.printf("Action: nod_head. Angle: %d\n", angle);
@@ -346,8 +346,8 @@ void handleCommand(char* commandJson) {
       led_override = false;     
 
       if (led_r > 0 || led_g > 0 || led_b > 0 || led_effect != "none") {
-          led_effect_end_time = millis() + 30000; // 30s failsafe
-          Serial.printf("LED set: %s (30s timeout)\n", led_effect.c_str());
+          led_effect_end_time = millis() + 5000; // 30s failsafe
+          Serial.printf("LED set: %s (5s timeout)\n", led_effect.c_str());
       } else {
           led_effect_end_time = 0; 
           Serial.println("LED set: OFF (permanent)");
