@@ -15,7 +15,7 @@ Emily consists of three independent modules communicating over a local UDP netwo
 ## 🚀 Features
 * **True Autonomy:** Emily decides when to sleep, when to wake up, and when to look around based on her internal Arousal/Valence levels.
 * **Vision & Voice:** She sees the world through an OV2640 camera and speaks via high-quality TTS generation.
-* **Modular Personality:** Change her entire character by swapping the `adventure.json` CMS file (e.g., from "Helpful Assistant" to "Dungeon Master").
+* **Modular Personality:** Change her entire character by swapping the `system_prompt.txt` and/or `adventure.json` CMS file (e.g., from "Helpful Assistant" to "Dungeon Master").
 * **Wireless Body:** The head and body are physically separate (connected only by power and a servo signal line), communicating wirelessly for a clean build.
 
 ## 💰 Prerequisites & API Costs
