@@ -1004,20 +1004,27 @@ void EmilyBrain::logInteractionToSd_Error(const char* role, String tool_call_id,
 
 void EmilyBrain::transcribeAudioFromSd(const char* filename) {
     File audioFile = SD.open(filename, FILE_READ);
-    if (!audioFile) { /* handle error */ processSttResponseAndTriggerAi("{\"error\":\"Could not read audio file.\"}"); return; }
+    if (!audioFile) {
+        processSttResponseAndTriggerAi("{\"error\":\"Could not read audio file.\"}");
+        return;
+    }
     size_t file_size = audioFile.size();
-    if (file_size <= 44) { /* handle error */ audioFile.close(); processSttResponseAndTriggerAi("{\"error\":\"Audio file empty or invalid.\"}"); return; }
+    if (file_size <= 44) {
+        audioFile.close();
+        processSttResponseAndTriggerAi("{\"error\":\"Audio file empty or invalid.\"}");
+        return;
+    }
 
     Serial.printf("Starting STT streaming upload of %s (%d bytes)...\n", filename, file_size);
-    setState(EmilyState::PROCESSING_STT); // Update state
+    setState(EmilyState::PROCESSING_STT);
 
-    String boundary = "----EmilyBoundary" + String(random(0xFFFFF), HEX); // Add random element
-    String host = "api.openai.com";
-    String url = "/v1/audio/transcriptions";
+    String boundary = "----EmilyBoundary" + String(random(0xFFFFF), HEX);
+    String host = "api.venice.ai";
+    String url = "/api/v1/audio/transcriptions";
 
     // --- Build request parts ---
     String prefix = "--" + boundary + "\r\n";
-    prefix += "Content-Disposition: form-data; name=\"model\"\r\n\r\nwhisper-1\r\n";
+    prefix += "Content-Disposition: form-data; name=\"model\"\r\n\r\nopenai/whisper-large-v3\r\n";
     prefix += "--" + boundary + "\r\n";
     prefix += "Content-Disposition: form-data; name=\"language\"\r\n\r\nen\r\n";
     prefix += "--" + boundary + "\r\n";
@@ -1030,21 +1037,25 @@ void EmilyBrain::transcribeAudioFromSd(const char* filename) {
     WiFiClientSecure client;
     client.setInsecure();
     Serial.printf("Connecting to %s...\n", host.c_str());
-    if (!client.connect(host.c_str(), 443)) { /* handle error */ audioFile.close(); processSttResponseAndTriggerAi("{\"error\":\"Connection failed\"}"); return; }
-    Serial.println("Connected to OpenAI.");
+    if (!client.connect(host.c_str(), 443)) {
+        audioFile.close();
+        processSttResponseAndTriggerAi("{\"error\":\"Connection failed\"}");
+        return;
+    }
+    Serial.println("Connected to Venice STT.");
 
     // --- Send HTTP Headers ---
     client.println("POST " + url + " HTTP/1.1");
     client.println("Host: " + host);
-    String authHeader = "Bearer " + String(OPENAI_API_KEY);
+    String authHeader = "Bearer " + String(VENICE_API_KEY);
     client.println("Authorization: " + authHeader);
     client.println("Content-Type: multipart/form-data; boundary=" + boundary);
     client.println("Content-Length: " + String(content_length));
     client.println("Connection: close");
-    client.println(); // End of headers
+    client.println();
 
     // --- Stream Body ---
-    client.print(prefix); // Send prefix
+    client.print(prefix);
     Serial.println("Streaming audio data...");
     uint8_t buffer[1024];
     size_t total_bytes_sent = 0;
@@ -1052,48 +1063,44 @@ void EmilyBrain::transcribeAudioFromSd(const char* filename) {
         size_t bytes_read = audioFile.read(buffer, sizeof(buffer));
         size_t bytes_sent = client.write(buffer, bytes_read);
         if (bytes_sent != bytes_read) {
-             Serial.println("!!! ERROR sending audio chunk!");
-             // Handle error - maybe abort?
-             break;
+            Serial.println("!!! ERROR sending audio chunk!");
+            break;
         }
         total_bytes_sent += bytes_sent;
-        // Serial.print("."); // Optional progress
     }
     audioFile.close();
-    client.print(suffix); // Send suffix
+    client.print(suffix);
     Serial.printf("Streaming upload complete (%u bytes sent).\n", total_bytes_sent);
 
     // --- Read Response ---
     String response_full = "";
     unsigned long timeout = millis();
-    while (client.connected() && millis() - timeout < 30000) { // 30s timeout
-         if (client.available()) {
-            response_full += client.readString(); // Read available data
-            timeout = millis(); // Reset timeout on receiving data
-         }
-         delay(10); // Small delay to prevent busy-waiting
+    while (client.connected() && millis() - timeout < 30000) {
+        if (client.available()) {
+            response_full += client.readString();
+            timeout = millis();
+        }
+        delay(10);
     }
-     if (!client.connected() && response_full.length() == 0) {
-        Serial.println("!!! ERROR: Connection closed by server before response received.");
+    if (!client.connected() && response_full.length() == 0) {
+        Serial.println("!!! ERROR: Connection closed before response.");
         processSttResponseAndTriggerAi("{\"error\":\"No response from server\"}");
         client.stop();
         return;
     }
     client.stop();
-    // Serial.println("--- Full STT Response ---");
-    // Serial.println(response_full);
-    // Serial.println("-------------------------");
 
     // --- Extract Body and Send Result ---
     int body_start_index = response_full.indexOf("\r\n\r\n");
-    String response_body = "{\"error\":\"Invalid server response\"}"; // Default error
+    String response_body = "{\"error\":\"Invalid server response\"}";
     if (body_start_index != -1) {
         response_body = response_full.substring(body_start_index + 4);
         response_body.trim();
     }
-    processSttResponseAndTriggerAi(response_body); // Send result back (need this function)
-    
+    processSttResponseAndTriggerAi(response_body);
 }
+
+
 
 // --- processSttResponseAndTriggerAi function (from CognitiveCore) ---
 void EmilyBrain::processSttResponseAndTriggerAi(const String& raw_api_payload) {
@@ -1524,35 +1531,40 @@ bool EmilyBrain::downloadTtsToSd(const char* textToSpeak, const char* filename) 
 }
 
 void EmilyBrain::processTtsRequest(const char* text) {
-    
     Serial.println("Processing TTS request...");
-    // setState(EmilyState::GENERATING_SPEECH); // NEW state for download/API call
+    
+    // Give ESP32 breathing room - let heap recover from previous TLS connections
+    delay(500);
+    Serial.printf(">>> TTS: Free Heap: %u, Free PSRAM: %u\n", 
+                  ESP.getFreeHeap(), ESP.getFreePsram());
 
     const char* filename = "/tts_output.wav";
-    tts_task_start_time = millis(); // Start timer just before download attempt
+    tts_task_start_time = millis();
 
-    // Step 1: Download the audio to SD card (BLOCKING for now)
     bool download_success = downloadTtsToSd(text, filename);
 
-    // Step 2: If download successful, start playback state
-    if (download_success) {
-        // --- DON'T PLAY HERE ---
-        // Playback happens when the state machine reaches SPEAKING
-        
-        setState(EmilyState::SPEAKING); // Transition to SPEAKING state
-        
-    } else {
-        // Handle download failure - maybe log error, go back to IDLE?
-        Serial.println("TTS Request FAILED during download.");
-        // Log error back to AI history?
-        if (!active_tool_call_id.isEmpty()) {
-             logInteractionToSd_Error("tool", active_tool_call_id, active_tool_call_name, "ERROR: Failed to generate speech audio.");
-        }
-         setState(EmilyState::IDLE); // Go back to IDLE on failure
-         tts_task_start_time = 0; // Reset timer on failure
+    // Retry once on failure after longer delay
+    if (!download_success) {
+        Serial.println("TTS first attempt failed, retrying...");
+        delay(1500);
+        Serial.printf(">>> TTS retry: Free Heap: %u, Free PSRAM: %u\n", 
+                      ESP.getFreeHeap(), ESP.getFreePsram());
+        download_success = downloadTtsToSd(text, filename);
     }
-    // Note: Playback doesn't happen in this function anymore.
-    Serial.println(">>> DEBUG: Exiting processTtsRequest."); // <-- ADD
+
+    if (download_success) {
+        setState(EmilyState::SPEAKING);
+    } else {
+        Serial.println("TTS Request FAILED after retry.");
+        if (!active_tool_call_id.isEmpty()) {
+             logInteractionToSd_Error("tool", active_tool_call_id, 
+                                       active_tool_call_name, 
+                                       "ERROR: Failed to generate speech audio.");
+        }
+        setState(EmilyState::IDLE);
+        tts_task_start_time = 0;
+    }
+    Serial.println(">>> DEBUG: Exiting processTtsRequest.");
 }
 
 String EmilyBrain::buildSelfAwarenessReport(JsonObject device_status) {
@@ -1561,6 +1573,7 @@ String EmilyBrain::buildSelfAwarenessReport(JsonObject device_status) {
     report += DESC_CORE; // Core description
     report += "\nMy physical body has the following additional components currently online:\n";
 
+    
     if (device_status["camcanvas_online"]) {
         report += DESC_CAMCANVAS;
     }
@@ -1847,23 +1860,32 @@ void EmilyBrain::handleUdpPackets() {
             }
         } // --- END CAMCANVAS BLOCK ---    
         
+        
+
         // --- Handle INPUTPAD Packets ---
         else if (sender_ip_str == INPUTPAD_IP_ADDRESS) {
             last_inputpad_contact = current_time;
-            if (!inputpad_connected) { Serial.println("InputPad Connected."); inputpad_connected = true; }
+            if (!inputpad_connected) { 
+                Serial.println("InputPad Connected."); 
+                inputpad_connected = true; 
+            }
 
-            // Peek at JSON to determine event type
-            StaticJsonDocument<96> peek_doc;
-            deserializeJson(peek_doc, packetBuffer); 
-            const char* event_type = peek_doc["event"] | "unknown";
-
-            if (strcmp(event_type, "input_received") == 0 && currentState == EmilyState::AWAITING_INPUT) {
+        StaticJsonDocument<128> input_doc;
+        DeserializationError err = deserializeJson(input_doc, packetBuffer);
+        
+        if (!err) {
+            const char* event_type = input_doc["event"] | "unknown";
+            
+            if (strcmp(event_type, "input_received") == 0) {
                 Serial.println("Received INPUT_RECEIVED from InputPad.");
                 last_inputpad_response.clear();
-                DeserializationError err = deserializeJson(last_inputpad_response, packetBuffer); 
-                if (err) Serial.println("ERROR: Could not parse input_received!");
+                last_inputpad_response["event"] = input_doc["event"];
+                last_inputpad_response["value"] = input_doc["value"];
+                Serial.printf(">>> Stored InputPad value: %s\n", 
+                            last_inputpad_response["value"].as<const char*>());
             }
         }
+    }
         
         // --- Clear the UDP buffer ---
         udp.flush();
@@ -2526,7 +2548,8 @@ void EmilyBrain::loop() {
         // Force back to IDLE
         arousal = 0.0;
         valence = 0.0;
-        // TODO: Clear task queue and stop active processes (like STT) later
+        current_arousal_context = nullptr;
+        task_queue.clear();
         setState(EmilyState::IDLE);
         
         delay(100); // Small delay to prevent immediate re-trigger
