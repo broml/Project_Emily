@@ -117,7 +117,7 @@ Emily consists of three networked ESP32 units communicating over WiFi using UDP:
 │  │    ESP32-S3        │        │       ESP32-S3-CAM       │  │
 │  │                    │        │                          │  │
 │  │ • State Machine    │        │ • Camera (SVGA)          │  │
-│  │   (13 states)      │        │ • Image Gen (Venice)     │  │
+│  │   (12 states)      │        │ • Image Gen (Venice)     │  │
 │  │ • Task Planner     │        │ • 3.5 TFT Display        │  │
 │  │ • Homeostasis      │        │ • Pan/Tilt Servos        │  │
 │  │ • Chat History     │        │ • NeoPixel LED           │  │
@@ -144,7 +144,7 @@ Emily consists of three networked ESP32 units communicating over WiFi using UDP:
 
 ### EmilyBrain (ESP32-S3 N16R8)
 
-The central intelligence. Runs the 13-state state machine, manages all API
+The central intelligence. Runs the 12-state state machine, manages all API
 communication with Venice.ai, processes speech input and output, handles LLM
 reasoning, and coordinates the other units. Features a 2.8inch status display,
 I2S speaker, INMP441 microphone, and SD card for conversation history,
@@ -186,7 +186,7 @@ cloud services are required.
 
 ### EmilyBrain: State Machine
 
-EmilyBrain operates as a **13-state finite state machine** running at ~33Hz:
+EmilyBrain operates as a **12-state finite state machine** running at ~33Hz:
 
 ```text
 ┌──────────┐
