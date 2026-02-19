@@ -650,7 +650,7 @@ extraction — see what prompt Emily used to generate each image.
 
 ### Usage
 
-bash
+bash or cmd
 python Emily_Manager.py
 
 The application opens a GUI window. Enter EmilyBrain's IP address to
@@ -678,6 +678,69 @@ Emily responds exactly as she would to voice input — the same state
 machine, tools, and emotional model are active. The only difference is 
 that input comes from the browser instead of the microphone. Arousal is not set however.
 
+```
+┌──────────────────────────────────────────────────────┐
+│          Emily's Management Console v1.0              │
+│          (Python / Tkinter)                           │
+│                                                       │
+│  ┌─────────────────────────────────────────────────┐ │
+│  │  EmilyManagerApp (Hoofdvenster)                  │ │
+│  │                                                   │ │
+│  │  Persona & Save Slots                            │ │
+│  │  ├── Save Current State → download van device    │ │
+│  │  │   ├── system_prompt.txt                       │ │
+│  │  │   ├── tools_config.json                       │ │
+│  │  │   ├── chat_history.jsonl                      │ │
+│  │  │   └── adventure.json                          │ │
+│  │  │                                               │ │
+│  │  └── Load Selected → upload naar device          │ │
+│  │      └── "Overwrite Emily's brain with...?"      │ │
+│  │                                                   │ │
+│  │  Device Management                               │ │
+│  │  ├── Upload System Prompt                        │ │
+│  │  ├── Upload Tools Config                         │ │
+│  │  ├── Upload Game Data (adventure.json)           │ │
+│  │  └── Clear Chat History ("Wipe Emily's memory")  │ │
+│  │                                                   │ │
+│  │  Art Gallery → sub-window                        │ │
+│  └──────────────────────────────────────────────────┘ │
+│                                                       │
+│  ┌──────────────────────────────────────────────────┐ │
+│  │  ImageGalleryApp (Sub-venster)                    │ │
+│  │                                                    │ │
+│  │  1. Load chat_history.jsonl                       │ │
+│  │  2. Extract image prompts from tool_calls         │ │
+│  │  3. Select model (sd35, Illustrious, hidream...) │ │
+│  │  4. Generate via Venice API                       │ │
+│  │  5. Preview + Save as JPEG                        │ │
+│  └──────────────────────────────────────────────────┘ │
+│                                                       │
+│  Communication: HTTP to EmilyBrain:80                │
+│  ├── POST /upload?file=<filename>                    │
+│  ├── GET  /download?file=<filename>                  │
+│  └── GET  /delete-history                            │
+└──────────────────────────────────────────────────────┘
+
+
+personas/
+├── DungeonMaster/
+│   └── save_slots/
+│       ├── Session_1/
+│       │   ├── system_prompt.txt
+│       │   ├── tools_config.json
+│       │   ├── chat_history.jsonl
+│       │   └── adventure.json
+│       └── Session_2/
+│           └── ...
+├── CompanionBot/
+│   └── save_slots/
+│       └── Default/
+│           └── ...
+└── QuizMaster/
+    └── …
+
+
+```
 
 ## Tips & Troubleshooting
 
