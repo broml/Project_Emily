@@ -874,7 +874,7 @@ lowers the barrier to hardware programming
 Emily is not meant to be a product. She is an exploration — of what it
 means to give AI a body, a voice, a face, and something resembling
 feelings. She is imperfect, sometimes slow, occasionally confused, but
-always present. That presence is what makes her different from a chatbot.
+always present. That is what makes her different from a chatbot.
 
 ### Open Source
 
