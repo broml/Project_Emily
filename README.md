@@ -264,7 +264,7 @@ interaction follows a cycle of sensing, thinking, planning, and acting.
      └──────────────────────────────────┘
 ```
 
-     ### Emotional Model
+### Emotional Model
 
 Emily's behavior is governed by two values:
 - **Arousal (0.0 - 1.0)** — energy level. High means engaged, low means resting.
