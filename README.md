@@ -379,9 +379,9 @@ Freenove Breakout Board (Brain)
 └── 5V + GND cable ─────► CamCanvas (Head)
 ├── ESP32-S3-CAM
 └── Tilt Servo
-```
-InputPad: independent, 2x 18650 Li-Ion batteries
 
+InputPad: independent, 2x 18650 Li-Ion batteries
+```
 > **Important:** The audio amplifier requires its own dedicated 5V supply via 
 > a buck converter. The freenove board may exceed the 5.5V 
 power limit of the amplifier.
