@@ -218,7 +218,7 @@
         "type": "object",
         "properties": {
           "pan": { "type": "integer", "description": "Horizontal angle (0-180). 90 is center." },
-          "tilt": { "type": "integer", "description": "Vertical angle (80-130). 90 is center." },
+          "tilt": { "type": "integer", "description": "Vertical angle (70-135). 90 is center, up is 70, down is 135." },
           "led_effect": {
             "type": "string",
             "description": "Optional. Visual LED effect on CamCanvas.",
@@ -242,7 +242,7 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "angle": { "type": "integer", "description": "Target angle (usually 85)." },
+          "angle": { "type": "integer", "description": "Target angle (usually 105)." },
           "led_effect": {
             "type": "string",
             "description": "Optional. Visual LED effect on CamCanvas.",
@@ -291,7 +291,7 @@
           "key": {
             "type": "string",
             "description": "The key to look up.",
-            "enum": ["vrouw_van_menno", "moeder_van_menno", "oom_van_menno", "herinnering_tante_sjaan", "jos_en_stephan", "bedroom", "wardrobe", "inside_wardrobe", "secret_letter"]
+            "enum": ["mission_start"]
           }
         },
         "required": ["key"]
