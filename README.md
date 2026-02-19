@@ -88,17 +88,6 @@ making choices with the InputPad, and saving a fellow AI.*
 - 🔧 **Single API** — all AI through Venice.ai, no other services required
 - ⚡ **Fully autonomous** — runs independently after initial configuration
 
-
-## Architecture
-
-Emily consists of three networked ESP32 units communicating over WiFi using UDP:
-
-Dank je! Nu zie ik het complete plaatje. Hier zijn secties 4 en 5 opnieuw, correct dit keer:
-
-
-## Sectie 4: Features (herzien)
-
-
 ## Features
 
 ### AI Capabilities
@@ -301,12 +290,11 @@ Freenove Breakout Board (Brain)
 InputPad: independent, 2x 18650 Li-Ion batteries
 
 > **Important:** The audio amplifier requires its own dedicated 5V supply via 
-> a buck converter. Running it directly from the servo power rail may causes audio 
-> cutouts when servos draw current. Also the freenove board may exceed the 5.5V 
+> a buck converter. The freenove board may exceed the 5.5V 
 power limit of the amplifier.
 
 > **Note:** There are no data wires between EmilyBrain and CamCanvas. All 
-> communication is wireless (WiFi/UDP). Only power wires run through the neck.
+> communication is wireless (WiFi/UDP).
 
 ### Assembly Notes
 
