@@ -657,27 +657,6 @@ The application opens a GUI window. Enter EmilyBrain's IP address to
 connect. All operations are performed over HTTP to the PTMS web server
 running on EmilyBrain.
 
-
-## Web Chat Interface
-
-EmilyBrain hosts a web-based chat interface accessible from any browser 
-on the same network. This serves as a text-based backdoor for interacting 
-with Emily without using voice.
-
-### Access
-
-Open a browser and navigate to: http://<EmilyBrain-IP-address>/remote
-
-### Use Cases
-
-- **Testing** — interact with Emily without needing the microphone
-- **Quiet environments** — type instead of speak
-- **Development** — quickly test/reset
-
-Emily responds exactly as she would to voice input — the same state 
-machine, tools, and emotional model are active. The only difference is 
-that input comes from the browser instead of the microphone. Arousal is not set however.
-
 ```
 ┌──────────────────────────────────────────────────────┐
 │          Emily's Management Console v1.0              │
@@ -741,6 +720,27 @@ personas/
 
 
 ```
+
+## Web Chat Interface
+
+EmilyBrain hosts a web-based chat interface accessible from any browser 
+on the same network. This serves as a text-based backdoor for interacting 
+with Emily without using voice.
+
+### Access
+
+Open a browser and navigate to: http://<EmilyBrain-IP-address>/remote
+
+### Use Cases
+
+- **Testing** — interact with Emily without needing the microphone
+- **Quiet environments** — type instead of speak
+- **Development** — quickly test/reset
+
+Emily responds exactly as she would to voice input — the same state 
+machine, tools, and emotional model are active (however, arousal = 0). The difference is 
+that input comes from the browser instead of the microphone.
+
 
 ## Tips & Troubleshooting
 
