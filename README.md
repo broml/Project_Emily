@@ -203,6 +203,99 @@ capabilities — language model, text-to-speech, speech-to-text, vision
 analysis, and image generation — run through one private API. No other 
 cloud services are required.
 
+
+
+## How It Works
+
+Emily operates on a 13-state state machine running on EmilyBrain. Each 
+interaction follows a cycle of sensing, thinking, planning, and acting.
+
+### The Interaction Cycle
+```
+     ┌──────────────────────────────────┐
+     │           IDLE (sleeping)         │
+     │         arousal ≈ 0.0             │
+     └──────────────┬───────────────────┘
+                    │ wake button pressed
+                    ▼
+     ┌──────────────────────────────────┐
+     │        LISTENING (recording)      │
+     │        microphone active          │
+     └──────────────┬───────────────────┘
+                    │ silence detected
+                    ▼
+     ┌──────────────────────────────────┐
+     │      PROCESSING_STT              │
+     │      audio → Venice Whisper       │
+     └──────────────┬───────────────────┘
+                    │ transcription received
+                    ▼
+     ┌──────────────────────────────────┐
+     │      THINKING (LLM reasoning)     │
+     │      Venice LLM processes input   │
+     │      returns text + tool calls    │
+     └──────────────┬───────────────────┘
+                    │ response received
+                    ▼
+     ┌──────────────────────────────────┐
+     │      PLANNING (task planner)      │
+     │      parses tool calls into       │
+     │      ordered task queue           │
+     └──────────────┬───────────────────┘
+                    │ tasks queued
+                    ▼
+     ┌──────────────────────────────────┐
+     │      EXECUTING (task executor)    │◄──── loops until
+     │      runs tasks one by one:       │      queue is empty
+     │      • move_head                  │
+     │      • generate_image             │
+     │      • announce_message (TTS)     │
+     │      • play_sound_effect          │
+     │      • activate_inputpad          │
+     │      • analyze_visual_environment │
+     │      • retrieve_local_data        │
+     │      • start_conversation (TTS)   │
+     │      • update_emotional_state     │
+     └──────────────┬───────────────────┘
+                    │ arousal set to 0.0
+                    ▼
+     ┌──────────────────────────────────┐
+     │           IDLE (sleeping)         │
+     └──────────────────────────────────┘
+```
+
+     ### Emotional Model
+
+Emily's behavior is governed by two values:
+- **Arousal (0.0 - 1.0)** — energy level. High means engaged, low means resting.
+- **Valence (-1.0 - 1.0)** — mood. Positive is happy, negative is sad.
+
+Emily starts each interaction with high arousal. As the conversation 
+progresses, she adjusts both values based on context. When arousal drops 
+to 0.0, she returns to idle. This creates natural conversation endings — 
+Emily decides when she is done, just like a person would.
+
+### Tool Calling
+
+Emily does not just generate text — she generates **actions**. Each LLM 
+response can include tool calls that the planner converts into executable 
+tasks:
+
+```json
+{
+  "tool_calls": [
+    {"function": {"name": "move_head", "arguments": {"pan": 90, "tilt": 85}}},
+    {"function": {"name": "generate_image", "arguments": {"prompt": "a dark corridor"}}},
+    {"function": {"name": "announce_message", "arguments": {"message": "Follow me..."}}}
+  ]
+}
+```
+
+The planner sorts these into a logical execution order (movement first,
+then visuals, then speech) and the executor runs them sequentially,
+coordinating between all three hardware units.
+
+
 ## Hardware
 
 Emily is built from off-the-shelf hobby components. The system is modular, 
@@ -517,97 +610,6 @@ The included demo adventure demonstrates all three input modes:
 
 > **Tip:** Use `announce_message` for one-way narration and `start_conversation` 
 > when you want the player to respond verbally before proceeding.
-
-
-## How It Works
-
-Emily operates on a 13-state state machine running on EmilyBrain. Each 
-interaction follows a cycle of sensing, thinking, planning, and acting.
-
-### The Interaction Cycle
-```
-     ┌──────────────────────────────────┐
-     │           IDLE (sleeping)         │
-     │         arousal ≈ 0.0             │
-     └──────────────┬───────────────────┘
-                    │ wake button pressed
-                    ▼
-     ┌──────────────────────────────────┐
-     │        LISTENING (recording)      │
-     │        microphone active          │
-     └──────────────┬───────────────────┘
-                    │ silence detected
-                    ▼
-     ┌──────────────────────────────────┐
-     │      PROCESSING_STT              │
-     │      audio → Venice Whisper       │
-     └──────────────┬───────────────────┘
-                    │ transcription received
-                    ▼
-     ┌──────────────────────────────────┐
-     │      THINKING (LLM reasoning)     │
-     │      Venice LLM processes input   │
-     │      returns text + tool calls    │
-     └──────────────┬───────────────────┘
-                    │ response received
-                    ▼
-     ┌──────────────────────────────────┐
-     │      PLANNING (task planner)      │
-     │      parses tool calls into       │
-     │      ordered task queue           │
-     └──────────────┬───────────────────┘
-                    │ tasks queued
-                    ▼
-     ┌──────────────────────────────────┐
-     │      EXECUTING (task executor)    │◄──── loops until
-     │      runs tasks one by one:       │      queue is empty
-     │      • move_head                  │
-     │      • generate_image             │
-     │      • announce_message (TTS)     │
-     │      • play_sound_effect          │
-     │      • activate_inputpad          │
-     │      • analyze_visual_environment │
-     │      • retrieve_local_data        │
-     │      • start_conversation (TTS)   │
-     │      • update_emotional_state     │
-     └──────────────┬───────────────────┘
-                    │ arousal set to 0.0
-                    ▼
-     ┌──────────────────────────────────┐
-     │           IDLE (sleeping)         │
-     └──────────────────────────────────┘
-```
-
-     ### Emotional Model
-
-Emily's behavior is governed by two values:
-- **Arousal (0.0 - 1.0)** — energy level. High means engaged, low means resting.
-- **Valence (-1.0 - 1.0)** — mood. Positive is happy, negative is sad.
-
-Emily starts each interaction with high arousal. As the conversation 
-progresses, she adjusts both values based on context. When arousal drops 
-to 0.0, she returns to idle. This creates natural conversation endings — 
-Emily decides when she is done, just like a person would.
-
-### Tool Calling
-
-Emily does not just generate text — she generates **actions**. Each LLM 
-response can include tool calls that the planner converts into executable 
-tasks:
-
-```json
-{
-  "tool_calls": [
-    {"function": {"name": "move_head", "arguments": {"pan": 90, "tilt": 85}}},
-    {"function": {"name": "generate_image", "arguments": {"prompt": "a dark corridor"}}},
-    {"function": {"name": "announce_message", "arguments": {"message": "Follow me..."}}}
-  ]
-}
-
-
-The planner sorts these into a logical execution order (movement first,
-then visuals, then speech) and the executor runs them sequentially,
-coordinating between all three hardware units.
 
 
 ## Emily Manager
