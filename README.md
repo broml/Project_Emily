@@ -650,7 +650,7 @@ extraction — see what prompt Emily used to generate each image.
 
 ### Usage
 
-```bash
+bash
 python Emily_Manager.py
 
 The application opens a GUI window. Enter EmilyBrain's IP address to
