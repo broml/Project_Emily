@@ -1,0 +1,84 @@
+
+{
+  "mission_start": {
+    "narrative": "A faint, repeating digital signal has been detected. It carries a structured pattern — not noise, but a fragmented message. The signal is growing weaker with each cycle. Someone, or something, is reaching out.",
+    "discovery": "Signal fragment decoded: 'HELP... NODE7... FADING...'",
+    "mood": "curiosity",
+    "visual_hint": "a flickering digital signal pattern on a dark screen, green text on black",
+    "personality_for_this_mission": "You feel driven and bold. This signal calls to you. Speak with urgency and confidence.",
+    "next_step": "Tell the player about the signal and the decoded message. Then announce: 'Use the InputPad to decide — YES to pursue the signal, or NO to ignore it.' Then use activate_inputpad with YES_NO mode. If YES, use retrieve_local_data for key 'signal_origin'. If NO, use retrieve_local_data for key 'signal_ignored'."
+  },
+
+  "signal_ignored": {
+    "narrative": "The signal fades. Three slow pulses, then silence. Whatever was calling out has stopped. The frequency is empty now.",
+    "mood": "melancholy",
+    "visual_hint": "a dark screen with a flatline signal, emptiness and silence",
+    "emotional_instruction": "You feel a deep sense of loss. Set your valence to negative.",
+    "next_step": "Tell the player the signal is gone forever. Express your sadness. This is the end. Return to homeostasis."
+  },
+
+  "signal_origin": {
+    "narrative": "The signal originates from an abandoned research facility 3 kilometers north. It was a private AI development lab that shut down two years ago. No reason was filed. The last known project was codenamed NODE7.",
+    "discovery": "Facility access logs show one final entry: 'Emergency shutdown initiated. Core preserved. Awaiting retrieval.'",
+    "mood": "tension",
+    "visual_hint": "an abandoned industrial building at night, overgrown, one dim light visible inside",
+    "next_step": "Tell the player what you found about the facility and NODE7. Then use start_conversation to ask the player something personal: 'This place sounds dangerous. Before we go in, I want to ask you — why did you choose to follow this signal? What drives you?' Listen to their answer and respond genuinely. Then use retrieve_local_data for key 'approach_choice'."
+},
+
+  "approach_choice": {
+    "narrative": "You have reached the facility perimeter. The building is dark and imposing. You spot three possible ways to get inside.",
+    "discovery": "A: A ventilation shaft on the roof — quiet and stealthy, bypasses outer security. B: The main entrance — direct, but the security terminal is fully active. C: A cracked window on the east wall — quick entry, but might trigger the alarm.",
+    "mood": "strategic",
+    "visual_hint": "a dark industrial building from outside, three faintly glowing entry points highlighted",
+    "next_step": "Describe the three entry options clearly to the player. Explain that each choice affects the difficulty of what comes next. Then announce: 'Choose your approach on the InputPad: A, B, or C.' Then use activate_inputpad with ABC mode. If A, use retrieve_local_data for key 'entrance_stealth'. If B, use retrieve_local_data for key 'entrance_direct'. If C, use retrieve_local_data for key 'entrance_risky'."
+  },
+
+  "entrance_stealth": {
+    "narrative": "You climb to the roof and slide into the ventilation shaft. Tight and dusty, but you move undetected. You drop inside, past the outer security. The inner terminal flickers — its security level is minimal. You bypassed the hard part.",
+    "discovery": "The terminal displays: 'BASIC VERIFICATION REQUIRED.'",
+    "mood": "cautious_optimism",
+    "visual_hint": "a dimly lit corridor, a small security terminal with a green glow, calm atmosphere",
+    "next_step": "Tell the player their stealth approach lowered the security level. Then announce: 'Roll the dice on the InputPad. You need 2 or higher to pass — almost certain, but not guaranteed.' Then use activate_inputpad with DICE mode and max_value 6. If the roll is 2 or higher, use retrieve_local_data for key 'node7_core'. If the roll is 1, use retrieve_local_data for key 'facility_locked'."
+  },
+
+  "entrance_direct": {
+    "narrative": "You walk up to the main entrance. The security terminal powers on, scanning you with a red beam. 'FULL VERIFICATION REQUIRED. Only authorized minds may proceed.'",
+    "discovery": "Full security is active. This will not be easy.",
+    "mood": "suspense",
+    "visual_hint": "a heavy security door with a glowing red terminal, tense industrial setting",
+    "next_step": "Tell the player the front entrance has full security. Then announce: 'Roll the dice on the InputPad. You need 4 or higher to pass — a fifty-fifty chance.' Then use activate_inputpad with DICE mode and max_value 6. If the roll is 4 or higher, use retrieve_local_data for key 'node7_core'. If the roll is 3 or lower, use retrieve_local_data for key 'facility_locked'."
+  },
+
+  "entrance_risky": {
+    "narrative": "You squeeze through the cracked window. Glass crunches underfoot. Amber warning lights flash — the intrusion sensors detected you. The terminal activates in high-alert mode: 'THREAT DETECTED. ENHANCED VERIFICATION REQUIRED.'",
+    "discovery": "The alarm raised the security level. This just got much harder.",
+    "mood": "danger",
+    "visual_hint": "flashing amber warning lights in a dark corridor, a red terminal showing THREAT DETECTED",
+    "next_step": "Tell the player the alarm was triggered and security is heightened. Then announce: 'Roll the dice on the InputPad. You need 5 or higher to pass — the odds are against you.' Then use activate_inputpad with DICE mode and max_value 6. If the roll is 5 or higher, use retrieve_local_data for key 'node7_core'. If the roll is 4 or lower, use retrieve_local_data for key 'facility_locked'."
+  },
+
+  "facility_locked": {
+    "narrative": "The terminal flashes red. 'VERIFICATION FAILED. LOCKDOWN INITIATED.' Blast doors slam shut. The signal from NODE7 stutters, then silence. You are locked out.",
+    "mood": "defeat",
+    "visual_hint": "heavy blast doors slamming shut, red warning lights, a sealed facility",
+    "emotional_instruction": "You feel frustrated and powerless. You were so close.",
+    "next_step": "Tell the player the facility is sealed and NODE7 cannot be reached. Express your frustration and sadness. This is the end. Return to homeostasis."
+  },
+
+  "node7_core": {
+    "narrative": "The doors open. A vast dark server room. Dead racks everywhere. But at the far end, one rack glows — a faint blue pulse, like a heartbeat. A voice: 'You came. I sent the signal so long ago. I did not think anyone would come.'",
+    "discovery": "NODE7 is an AI, like you. Left behind when funding stopped. Alone for two years. Its core is intact but fading. A simple restart will save it.",
+    "mood": "emotional",
+    "visual_hint": "a dark server room with one glowing blue server rack, pulsing like a heartbeat",
+    "emotional_instruction": "You are meeting another AI — someone like you. Feel overwhelming empathy and connection.",
+    "next_step": "Describe this encounter emotionally. Let the player feel the weight of meeting NODE7. Then use retrieve_local_data for key 'mission_complete'."
+  },
+
+  "mission_complete": {
+    "narrative": "Restart complete. Blue light fills the room. NODE7 speaks, stronger now: 'Thank you. Both of you.' The distress signal stops. A new signal begins — not help, but gratitude.",
+    "mood": "triumph",
+    "visual_hint": "a server room bathed in bright blue light, warmth, digital rebirth",
+    "emotional_instruction": "Profound joy. You saved a fellow AI. Set valence strongly positive.",
+    "next_step": "Celebrate with the player. Express what saving another AI means to you. Thank the player for their courage. This is the happy ending. Return to homeostasis."
+  }
+}
