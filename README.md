@@ -136,7 +136,7 @@ making choices with the InputPad, and saving a fellow AI.*
 ## Sectie 5: Architecture
 
 Emily consists of three networked ESP32 units communicating over WiFi using UDP:
-
+```
 ┌──────────────────────────────────────────────────────────────┐
 │                         WiFi Network                         │
 │                                                              │
@@ -168,7 +168,6 @@ Emily consists of three networked ESP32 units communicating over WiFi using UDP:
 │  └────────────────────┘                                      │
 └──────────────────────────────────────────────────────────────┘
 ```
-
 ### EmilyBrain (ESP32-S3 N16R8)
 The central intelligence. Runs the 13-state state machine, manages all API 
 communication with Venice.ai, processes speech input and output, handles LLM 
@@ -275,6 +274,7 @@ The system consists of three physical modules:
 **Total estimated cost: ~€206**
 
 ### Power Architecture
+```
 12V DC Adapter
 │
 ▼
@@ -286,7 +286,7 @@ Freenove Breakout Board (Brain)
 └── 5V + GND cable ─────► CamCanvas (Head)
 ├── ESP32-S3-CAM
 └── Tilt Servo
-
+```
 InputPad: independent, 2x 18650 Li-Ion batteries
 
 > **Important:** The audio amplifier requires its own dedicated 5V supply via 
@@ -525,8 +525,8 @@ Emily operates on a 13-state state machine running on EmilyBrain. Each
 interaction follows a cycle of sensing, thinking, planning, and acting.
 
 ### The Interaction Cycle
-
-┌──────────────────────────────────┐
+```
+     ┌──────────────────────────────────┐
      │           IDLE (sleeping)         │
      │         arousal ≈ 0.0             │
      └──────────────┬───────────────────┘
@@ -576,7 +576,7 @@ interaction follows a cycle of sensing, thinking, planning, and acting.
      ┌──────────────────────────────────┐
      │           IDLE (sleeping)         │
      └──────────────────────────────────┘
-
+```
 
      ### Emotional Model
 
@@ -610,11 +610,6 @@ then visuals, then speech) and the executor runs them sequentially,
 coordinating between all three hardware units.
 
 
----
-
-## Sectie 10: Emily Manager
-
-```markdown
 ## Emily Manager
 
 Emily Manager (`Emily_Manager.py`) is a desktop application for managing 
@@ -660,11 +655,7 @@ The application opens a GUI window. Enter EmilyBrain's IP address to
 connect. All operations are performed over HTTP to the PTMS web server
 running on EmilyBrain.
 
----
 
-## Sectie 11: Web Chat Interface
-
-```markdown
 ## Web Chat Interface
 
 EmilyBrain hosts a web-based chat interface accessible from any browser 
@@ -790,7 +781,6 @@ physical AI companions. Every component is available online, every line
 of code is open, and the only required service (Venice.ai) respects your 
 privacy.
 
----
 
 *Built with patience, curiosity, and a lot of coffee.*
 *ML, 2026*
