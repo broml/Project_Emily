@@ -38,8 +38,6 @@
 #define PIN_NEOPIXEL 48
 
 // --- WiFi Configuration (Credentials are Obsolete) ---
-// #define WIFI_SSID ""      // 
-// #define WIFI_PASS ""  // 
 #define UDP_LISTEN_PORT 12345
 
 // --- IP Addresses for Modules (Static Config) ---
@@ -70,7 +68,6 @@
 // WARNING: Do not share your API keys publicly!
 #define VENICE_API_KEY "YOUR_VENICE_API_KEY" // <-- CHANGE THIS
 #define VENICE_API_URL "https://api.venice.ai/api/v1/chat/completions"
-#define OPENAI_API_KEY "YOUR_OPENAI_API_KEY" // <-- CHANGE THIS
 
 // --- JSON Capacity ---
 // Memory reserved for the main LLM context window
@@ -295,3 +292,4 @@ private:
 };
 
 #endif // EMILYBRAIN_H
+
