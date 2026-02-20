@@ -476,6 +476,8 @@ or screw terminals, minimizing soldering.
 * **Head mechanism:** CamCanvas mounts on a U-bracket attached to the tilt
 servo, which sits on a U-bracket attached to the pan servo in the base unit.
 
+![Emily Backside](images/emily_backside.jpg)
+
 ## Software Setup
 
 ### Prerequisites
@@ -820,7 +822,7 @@ EmilyBrain hosts a web-based chat interface accessible from any browser
 on the same network. This serves as a text-based backdoor for interacting
 with Emily without using voice.
 
-![Emily_Manager](images/20.02.2026_07.47.17_REC.png)
+![Emily_WebIinterface](images/20.02.2026_07.47.17_REC.png)
 
 
 ### Access
