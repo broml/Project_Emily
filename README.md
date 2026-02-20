@@ -56,10 +56,14 @@ is different because Emily is not scripted — she thinks.
 
 ## See Emily in Action
 
-[![Emily Demo Video](images/emily_video_thumbnail.jpg)](https://www.youtube.com/watch?v=YOUR_YOUTUBE_LINK_HERE)
+[![Emily Demo Video](images/emily_video_thumbnail.jpg)](https://youtu.be/dH0Cqu6gF5Q?si=IeuI4u14tNhDG7xc)
 
-*Emily playing the NODE7 rescue adventure — detecting a distress signal, 
+*Emily playing the demo NODE7 rescue adventure — detecting a distress signal, 
 making choices with the InputPad, and saving a fellow AI.*
+
+[![Emily Demo Video](images/emily_video_thumbnail.jpg)](https://youtube.com/shorts/TZ6U01e2wbU?si=llUEcD7NNVsnfTfy)
+
+*Emily booting up and trying a complex instruction.*
 
 ## Features
 
