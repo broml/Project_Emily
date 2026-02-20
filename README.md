@@ -65,6 +65,10 @@ making choices with the InputPad, and saving a fellow AI.*
 
 *Emily booting up and trying a complex instruction.*
 
+[![Emily Demo Video](images/emily_video_thumbnail.jpg)](https://youtube.com/shorts/l8kbpyO0i9k?si=xJMeK77vZi4e2pFj)
+
+*Emily booting up and demonstrating Vision.*
+
 ## Features
 
 ### AI Capabilities
