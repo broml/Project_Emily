@@ -344,7 +344,7 @@ Emily's behavior is governed by two emotional parameters:
 
 | Parameter | Range | Description |
 | --- | --- | --- |
-| **Arousal** | 0.0 – 1.0 | Energy level. Above threshold (0.5) = active. Below = sleeping. |
+| **Arousal** | 0.0 – 1.0 | Energy level. Above threshold (0.1) = active. Below = sleeping. |
 | **Valence** | -1.0 – 1.0 | Mood. Positive = happy/curious. Negative = frustrated/sad. |
 
 ### Homeostasis
