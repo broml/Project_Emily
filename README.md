@@ -138,7 +138,7 @@ This is an overview of the Emily EcoSystem:
 │      └── Art Gallery (prompt extraction + generation)   │
 │                                                         │
 │  ON-DEVICE CONFIG                                       │
-│  ├── Captive Portal (WiFi setup, alle 3 units)          │
+│  ├── Captive Portal (WiFi setup, all 3 units)          │
 │  ├── PTMS Web Server (file management)                  │
 │  └── Web Chat Interface (text backdoor)                 │
 │                                                         │
