@@ -701,6 +701,9 @@ Emily Manager (`Emily_Manager.py`) is a desktop application for managing
 Emily's configuration, personality, and content. It connects to EmilyBrain
 over your local WiFi network.
 
+![Emily_Manager](images/20.02.2026_07.46.12_REC.png)
+
+
 ### Requirements
 
 * Python 3.x
@@ -816,6 +819,9 @@ personas/
 EmilyBrain hosts a web-based chat interface accessible from any browser
 on the same network. This serves as a text-based backdoor for interacting
 with Emily without using voice.
+
+![Emily_Manager](images/20.02.2026_07.47.17_REC.png)
+
 
 ### Access
 
