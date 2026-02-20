@@ -12,6 +12,7 @@
 - [What is Emily?](#what-is-emily)
 - [See Emily in Action](#see-emily-in-action)
 - [Features](#features)
+- [Emily Ecosystem](#emily-ecosystem)
 - [Architecture](#architecture)
 - [Software Architecture & Logic](#software-architecture--logic)
 - [The Emotional Model](#the-emotional-model)
@@ -104,6 +105,43 @@ making choices with the InputPad, and saving a fellow AI.*
 - 🔧 **Single API** — all AI through Venice.ai, no other services required
 - ⚡ **Fully autonomous** — runs independently after initial configuration
 
+
+## Emily Ecosystem
+
+This is an overview of the Emily EcoSystem:
+
+```tekst
+┌─────────────────────────────────────────────────────────┐
+│                     EMILY (MLi) ECOSYSTEM               │
+│                                                         │
+│  HARDWARE (3 ESP32 nodes)                               │
+│  ├── EmilyBrain  — thinks, hears, speaks                │
+│  ├── CamCanvas   — sees, shows, moves                   │
+│  └── InputPad    — physical input                       │
+│                                                         │
+│  CLOUD SERVICES                                         │
+│  └─ Venice.ai   — LLM, TTS, Vision, Image Gen, STT      │
+│                                                         │
+│  DESKTOP TOOLS                                          │
+│  └── Management Console (Python/Tkinter)                │
+│      ├── Persona & Save Slot Management                 │
+│      ├── File Upload/Download (HTTP)                    │
+│      ├── Memory Wipe                                    │
+│      └── Art Gallery (prompt extraction + generation)   │
+│                                                         │
+│  ON-DEVICE CONFIG                                       │
+│  ├── Captive Portal (WiFi setup, alle 3 units)          │
+│  ├── PTMS Web Server (file management)                  │
+│  └── Web Chat Interface (text backdoor)                 │
+│                                                         │
+│  CONTENT                                                │
+│  ├── systemprompt.txt    — personality                  │
+│  ├── tools_config.json   — capabilities                 │
+│  ├── adventure.json      — game/adventure/cms data      │
+│  ├── chat_history.jsonl  — memory (120 items)           │
+│  └── /sounds/*.wav       — sound effects                │
+└─────────────────────────────────────────────────────────┘
+```
 ## Architecture
 
 Emily consists of three networked ESP32 units communicating over WiFi using UDP:
