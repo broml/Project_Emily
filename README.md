@@ -323,7 +323,7 @@ CamCanvas is a **reactive peripheral** — it waits for UDP commands and execute
 | `take_picture` | Camera capture → JPEG → SD_MMC storage → UDP confirm |
 | `move_head` | Smooth servo interpolation (pan + tilt) |
 | `nod_head` | Tilt servo nod gesture |
-| `set_status_led` | NeoPixel effect with 30-second auto-off failsafe |
+| `set_status_led` | NeoPixel effect with 5-second auto-off |
 
 ### InputPad: Mode-Based Input
 
