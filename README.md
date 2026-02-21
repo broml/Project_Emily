@@ -938,5 +938,5 @@ physical AI companions. Every component is available online, every line
 of code is open, and the only required service (Venice.ai) respects your
 privacy.
 
-*Built with patience, curiosity, and a lot of coffee.* *ML, 2026*
+*Built with passion, patience, curiosity, and a lot of coffee.* *ML, 2026*
 <a href="https://www.buymeacoffee.com/broml" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
