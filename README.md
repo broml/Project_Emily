@@ -578,7 +578,7 @@ of each unit.
 2. Generate an API key in your account settings
 3. Add the API key to the EmilyBrain/CamCanvas configuration:
 ```.h/.ino
-#define VENICE_API_KEY "your-api-key-here"
+#define VENICE_API_KEY "YOUR-VENICE-API-KEY-HERE"
 
 ```
 
