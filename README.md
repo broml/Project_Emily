@@ -902,7 +902,7 @@ information at 115200 baud
 
 ## Contributing
 
-Contributions to the Emily project are more than welcome! Build your own, improve the code, or expand the hardware design, feel free to fork this repository and submit your Pull Requests. If you encounter any issues or have ideas for new features, please open an Issue first so we can discuss it.
+Contributions to the Emily project are more than welcome! Build your own, improve the code, create new adventures or expand the hardware design, feel free to fork this repository and submit your Pull Requests. If you encounter any issues or have ideas for new features, please open an Issue first so we can discuss it.
 
 ## License
 
