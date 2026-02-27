@@ -568,7 +568,6 @@ Before flashing, configure the following files on the SD card (EmilyBrain):
 | `systemprompt.txt` | Emily's personality and behavioral instructions |
 | `tools_config.json` | Tool definitions for the AI (function calling schema) |
 |, for interactive stories) |
-| `/sounds/*.wav` | the sounds - should match tools enums |
 
 WiFi credentials are configured through the captive portal on first boot
 of each unit.
